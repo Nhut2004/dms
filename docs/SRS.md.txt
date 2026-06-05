@@ -1,0 +1,109 @@
+# HỆ THỐNG QUẢN LÝ TÀI LIỆU ĐIỆN TỬ
+## Theo Nghị định 30/2020/NĐ-CP
+
+---
+
+## 1. Giới thiệu hệ thống
+- **Tên hệ thống:** Document Management System (DMS)
+- **Mục tiêu:** Quản lý, lưu trữ, xử lý, và kết nối văn bản điện tử theo quy định của Nhà nước.
+- **Phạm vi:** Áp dụng cho cơ quan, tổ chức nhà nước; bao gồm văn bản đến, văn bản đi, hồ sơ điện tử.
+- **Người dùng chính:** Văn thư, lãnh đạo, người xử lý, quản trị hệ thống.
+
+---
+
+## 2. Phân tích nghiệp vụ
+### 2.1 Luồng văn bản đến
+1. Tiếp nhận văn bản  
+2. Phân phối xử lý  
+3. Cập nhật tiến độ  
+4. Lưu trữ hồ sơ  
+
+### 2.2 Luồng văn bản đi
+1. Soạn thảo  
+2. Duyệt  
+3. Ký số  
+4. Phát hành  
+5. Thu hồi (nếu có)  
+
+### 2.3 Luồng hồ sơ
+1. Tạo hồ sơ  
+2. Thêm văn bản  
+3. Kết thúc  
+4. Nộp lưu  
+
+### 2.4 Luồng phân quyền
+1. Cấp quyền  
+2. Truy cập  
+3. Ghi nhật ký  
+4. Thu hồi quyền  
+
+---
+
+## 3. Chức năng hệ thống
+- **Văn bản đến:** đăng ký, cập nhật, theo dõi, thống kê, tìm kiếm.  
+- **Văn bản đi:** soạn thảo, ký số, phát hành, thu hồi.  
+- **Hồ sơ:** lập danh mục, liên kết văn bản, kết xuất dữ liệu.  
+- **Quản trị:** phân quyền, cảnh báo, phục hồi, khóa dữ liệu.  
+- **Báo cáo:** sổ đăng ký, mục lục hồ sơ, thống kê xử lý.  
+
+---
+
+## 4. Yêu cầu phi chức năng
+- **Bảo mật:** phân quyền truy cập, mã hóa mật khẩu, nhật ký truy cập.  
+- **Hiệu năng:** phản hồi < 2 giây cho thao tác cơ bản.  
+- **Khả năng mở rộng:** hỗ trợ nhiều cơ quan, nhiều người dùng đồng thời.  
+- **Tích hợp:** kết nối với hệ thống lưu trữ điện tử và ký số.  
+- **Phục hồi:** sao lưu định kỳ, khôi phục dữ liệu khi lỗi.  
+
+---
+
+## 5. Mô hình dữ liệu (CDM)
+### 5.1 Thực thể chính
+- Cơ quan/Tổ chức  
+- Tài khoản người dùng  
+- Hồ sơ lưu trữ  
+- Văn bản đến  
+- Văn bản đi  
+- Thông tin người ký  
+- Nơi nhận văn bản  
+- Tệp đính kèm  
+- Đặc tả mở rộng  
+- Phân quyền truy cập  
+- Nhật ký truy cập  
+- Nhật ký thu hồi  
+- Thông báo hệ thống  
+
+*(Chi tiết xem file `luận lý.docx` và sơ đồ ERD)*
+
+---
+
+## 6. Use Case Diagram
+### Actor chính
+- Quản trị hệ thống  
+- Văn thư  
+- Lãnh đạo  
+- Người xử lý  
+
+### Use Case chính
+- Tạo văn bản mới  
+- Gửi/nhận văn bản  
+- Phân phối xử lý  
+- Ký số và phát hành  
+- Lưu trữ hồ sơ  
+- Tìm kiếm và thống kê  
+- Quản lý phân quyền  
+- Thu hồi văn bản  
+
+*(Có thể vẽ bằng Mermaid hoặc Draw.io)*
+
+---
+
+## 7. Chuẩn dữ liệu đầu vào
+- **Văn bản đi:** 16 trường dữ liệu (FileCode, OrganId, IssuedDate, Subject, Priority, …)  
+- **Văn bản đến:** 18 trường dữ liệu (ArrivalDate, ArrivalNumber, TraceHeaderList, …)  
+- **Hồ sơ:** 11 trường dữ liệu (Title, Maintenance, StartDate, EndDate, …)  
+
+---
+
+## 8. Kết luận
+Tài liệu này là nền tảng cho việc thiết kế hệ thống, tạo database schema, và phát triển API trong giai đoạn tiếp theo.
