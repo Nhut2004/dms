@@ -17,11 +17,13 @@ from app.models.nhat_ky_truy_cap import NhatKyTruyCap
 from app.models.van_ban_di import VanBanDi
 from app.models.van_ban_den import VanBanDen
 from app.models.tep_dinh_kem import TepDinhKem
+from app.routes import auth_routes
 # 2. Lệnh tự động tạo tất cả các bảng trong database (nếu chưa có)
 Base.metadata.create_all(bind=engine)
 
 # 3. Khởi tạo ứng dụng FastAPI
 app = FastAPI(title="Document Management System (DMS)")
+
 
 app.include_router(co_quan_routes.router)
 app.include_router(tai_khoan_routes.router)
@@ -30,6 +32,7 @@ app.include_router(ho_so_routes.router)
 app.include_router(van_ban_di_routes.router)
 app.include_router(van_ban_den_routes.router)
 app.include_router(tep_dinh_kem_routes.router)
+app.include_router(auth_routes.router)
 
 
 @app.get("/")

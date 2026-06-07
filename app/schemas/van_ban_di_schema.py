@@ -32,7 +32,6 @@ class VanBanDiCreate(BaseModel):
     # Các khóa ngoại liên kết (Bắt buộc phải có để nối dữ liệu)
     ho_so_id: Optional[int] = None
     loai_vb_id: int
-    nguoi_soan_id: int
 
 # Schema trả kết quả về (hiển thị một số thông tin quan trọng)
 
