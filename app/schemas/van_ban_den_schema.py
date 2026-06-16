@@ -1,56 +1,37 @@
 from pydantic import BaseModel
 from typing import Optional
-from datetime import date, datetime
-
-# Schema nhận dữ liệu tạo mới
+from datetime import date
 
 
 class VanBanDenCreate(BaseModel):
-    # Thông tin ban hành
-    organ_id: str
-    organ_name: Optional[str] = None
-    type_name: Optional[str] = None
-    code_number: Optional[str] = None
-    code_notation: Optional[str] = None
-    issued_date: Optional[date] = None
-
-    # Nội dung
-    subject: Optional[str] = None
-    language: Optional[str] = "Tiếng Việt"
-    page_amount: Optional[int] = None
-    description: Optional[str] = None
-    priority: Optional[int] = 1
-
-    # Thông tin tiếp nhận (Văn bản đến)
-    arrival_date: Optional[date] = None
-    arrival_number: Optional[int] = None
-    to_places: Optional[str] = None
-    trace_header_list: Optional[str] = None
-    due_date: Optional[date] = None
-
-    # Người ký
-    signer_position: Optional[str] = None
-    signer_full_name: Optional[str] = None
-
-    # Các khóa ngoại liên kết
-    ho_so_id: Optional[int] = None
-    loai_vb_id: int
-    nguoi_nhap_id: int  # Người thực hiện nhập liệu vào hệ thống
-
-# Schema trả kết quả về
+    so_den: int
+    ky_hieu: Optional[str] = None
+    ngay_den: date
+    ngay_ban_hanh: Optional[date] = None
+    co_quan_ban_hanh_id: Optional[int] = None
+    ma_loai_vb_id: int
+    trich_yeu: str
+    ngon_ngu: Optional[str] = "Tiếng Việt"
+    so_trang: Optional[int] = None
+    ho_ten_nguoi_ky: Optional[str] = None
+    chuc_vu_nguoi_ky: Optional[str] = None
+    linh_vuc: Optional[str] = None
+    do_khan: Optional[int] = None
+    don_vi_nhan: Optional[str] = None
+    han_giai_quyet: Optional[date] = None
+    y_kien_chi_dao: Optional[str] = None
+    stt_trong_ho_so: Optional[int] = None
+    ma_ho_so: Optional[str] = None
 
 
 class VanBanDenResponse(BaseModel):
     id: int
-    organ_id: str
-    code_notation: Optional[str]
-    subject: Optional[str]
-    arrival_date: Optional[date]
-    status: str
-    loai_vb_id: int
-    nguoi_nhap_id: int
-    ho_so_id: Optional[int]
-    created_at: datetime
+    so_den: int
+    ky_hieu: Optional[str]
+    ngay_den: date
+    trich_yeu: str
+    ma_loai_vb_id: int
+    ma_ho_so: Optional[str]
 
     class Config:
         from_attributes = True

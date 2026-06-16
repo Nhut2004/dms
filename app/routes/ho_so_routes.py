@@ -1,28 +1,35 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from config.database import get_db
-from app.models.ho_so import HoSoLuuTru
+
+from app.models.core import HoSo
 from app.schemas.ho_so_schema import HoSoCreate, HoSoResponse
+from app.dependencies import lay_nguoi_dung_hien_tai
+from app.models.auth import TaiKhoan
 
 router = APIRouter(
     prefix="/api/ho-so",
-    tags=["Quản lý Hồ sơ lưu trữ"]
+    tags=["Quản lý Hồ sơ"]
 )
-
-# API 1: Tạo hồ sơ mới
 
 
 @router.post("/", response_model=HoSoResponse)
-def tao_ho_so(ho_so: HoSoCreate, db: Session = Depends(get_db)):
-    ho_so_moi = HoSoLuuTru(**ho_so.model_dump())
+def tao_ho_so(
+    ho_so: HoSoCreate,
+    db: Session = Depends(get_db),
+    nguoi_dung: TaiKhoan = Depends(lay_nguoi_dung_hien_tai)
+):
+    kiem_tra = db.query(HoSo).filter(HoSo.ma_ho_so == ho_so.ma_ho_so).first()
+    if kiem_tra:
+        raise HTTPException(status_code=400, detail="Mã hồ sơ đã tồn tại!")
+
+    ho_so_moi = HoSo(**ho_so.model_dump())
     db.add(ho_so_moi)
     db.commit()
     db.refresh(ho_so_moi)
     return ho_so_moi
 
-# API 2: Lấy danh sách hồ sơ
-
 
 @router.get("/", response_model=list[HoSoResponse])
 def lay_danh_sach_ho_so(db: Session = Depends(get_db)):
-    return db.query(HoSoLuuTru).all()
+    return db.query(HoSo).all()
