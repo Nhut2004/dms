@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from config.database import Base, engine
-
+from fastapi.middleware.cors import CORSMiddleware
 # 1. Import CÁC MODELS MỚI (chỉ cần 3 file này là đủ 16 bảng)
 from app.models import auth, core, document
 
@@ -18,6 +18,20 @@ from app.routes import tep_dinh_kem_routes
 app = FastAPI(title="Document Management System (DMS)")
 
 Base.metadata.create_all(bind=engine)
+
+origins = [
+    "http://localhost:5173",  # Cổng chạy Vite ReactJS của bạn
+    "http://127.0.0.1:5173",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],  # Cho phép mọi phương thức GET, POST, PUT, DELETE
+    # Cho phép mọi header (bao gồm cả Authorization chứa Token)
+    allow_headers=["*"],
+)
 
 # 4. Đăng ký các API Routes (Chỉ bật 2 API đã sửa)
 app.include_router(auth_routes.router)

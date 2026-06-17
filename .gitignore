@@ -13,3 +13,4 @@ __pycache__/
 
 # Bỏ qua các file người dùng tải lên test
 uploads/
+node_modules
