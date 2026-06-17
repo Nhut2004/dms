@@ -1,9 +1,11 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button, Card, Form, Input, message } from 'antd';
 import axios from 'axios';
 import logo from './assets/CTU_logo.png';
 
 const Login = () => {
+    const navigate = useNavigate();
     const onFinish = async (values) => {
         const params = new URLSearchParams();
         params.append('username', values.username);
@@ -23,6 +25,8 @@ const Login = () => {
             if (response.status === 200) {
                 localStorage.setItem('access_token', response.data.access_token);
                 message.success('Đăng nhập thành công!');
+
+                navigate('/');
             }
         } catch (error) {
             message.error('Sai tài khoản hoặc mật khẩu!');
