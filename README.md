@@ -37,18 +37,19 @@ Bước 4: Khởi động Server
 1. Lịch sử khởi tạo dự án (Dành cho báo cáo/giảng viên)
     Dự án được khởi tạo từ con số 0 bằng Vite và các thư viện UI, Call API:
 
-    Bash
     # Tạo khung dự án React
     npm create vite@latest frontend -- --template react
 
     # Di chuyển vào thư mục và cài đặt các thư viện lõi
     cd frontend
+
     npm install antd axios react-router-dom
 
     2. Dành cho thành viên nhóm (Khi clone code về máy)
     Các thành viên KHÔNG chạy lại lệnh khởi tạo ở trên, chỉ cần di chuyển vào thư mục và cài đặt các gói (packages) đã có sẵn:
 
     cd frontend
+
     npm install
 
     3. Khởi động Giao diện
