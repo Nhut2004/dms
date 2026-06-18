@@ -35,6 +35,7 @@ const App = () => {
           {/* Sửa lại thành: */}
           <Route path="van-ban-di" element={<ListVanBanDi />} />
           <Route path="them-van-ban" element={<CreateVanBanDi />} />
+          <Route path="sua-van-ban/:id" element={<CreateVanBanDi />} />
         </Route>
       </Routes>
     </BrowserRouter>

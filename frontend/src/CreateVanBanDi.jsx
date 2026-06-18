@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
+import dayjs from 'dayjs';
 import {
     Button,
     Card,
@@ -9,22 +10,30 @@ import {
     Input,
     Row,
     Select,
+    Upload,
     message,
-    Spin
+    Spin,
+    Typography
 } from 'antd';
+import { InboxOutlined } from '@ant-design/icons';
 import axios from 'axios';
 
 const { TextArea } = Input;
+const { Dragger } = Upload;
+const { Title } = Typography;
 const BASE_URL = 'http://localhost:8000';
 
 const CreateVanBanDi = () => {
     const [form] = Form.useForm();
     const navigate = useNavigate();
+    const { id } = useParams();
+    const isEditMode = Boolean(id);
     const [loading, setLoading] = useState(false);
     const [loadingOptions, setLoadingOptions] = useState(true);
     const [coQuanOptions, setCoQuanOptions] = useState([]);
     const [danhMucOptions, setDanhMucOptions] = useState([]);
     const [hoSoOptions, setHoSoOptions] = useState([]);
+    const [fileList, setFileList] = useState([]);
 
     const getAuthHeaders = () => {
         const token = localStorage.getItem('access_token');
@@ -79,41 +88,97 @@ const CreateVanBanDi = () => {
         fetchOptions();
     }, []);
 
+    useEffect(() => {
+        if (!isEditMode || !id) return;
+
+        const fetchDocument = async () => {
+            setLoading(true);
+            try {
+                const response = await axios.get(`${BASE_URL}/api/van-ban-di/${id}`, {
+                    headers: getAuthHeaders()
+                });
+                const data = response.data || {};
+
+                form.setFieldsValue({
+                    so_ky_hieu: data.so_ky_hieu,
+                    ngay_ban_hanh: data.ngay_ban_hanh ? dayjs(data.ngay_ban_hanh) : null,
+                    trich_yeu: data.trich_yeu,
+                    don_vi_soan_thao_id: data.don_vi_soan_thao_id,
+                    ma_loai_vb_id: data.ma_loai_vb_id,
+                    ngon_ngu: data.ngon_ngu || 'Tiếng Việt',
+                    so_trang: data.so_trang,
+                    ghi_chu: data.ghi_chu,
+                    nguoi_ky_id: data.nguoi_ky_id,
+                    chuc_vu_nguoi_ky: data.chuc_vu_nguoi_ky,
+                    noi_nhan: data.noi_nhan,
+                    muc_do_khan: data.muc_do_khan,
+                    han_tra_loi: data.han_tra_loi ? dayjs(data.han_tra_loi) : null,
+                    stt_trong_ho_so: data.stt_trong_ho_so,
+                    ma_ho_so: data.ma_ho_so,
+                });
+            } catch (error) {
+                message.error('Không thể tải dữ liệu văn bản để chỉnh sửa.');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchDocument();
+    }, [id, isEditMode, form]);
+
     const handleSubmit = async (values) => {
         setLoading(true);
 
         try {
-            const payload = {
-                so_ky_hieu: values.so_ky_hieu || null,
-                ngay_ban_hanh: values.ngay_ban_hanh
-                    ? values.ngay_ban_hanh.format('YYYY-MM-DD')
-                    : null,
-                trich_yeu: values.trich_yeu,
-                don_vi_soan_thao_id: values.don_vi_soan_thao_id,
-                ma_loai_vb_id: values.ma_loai_vb_id,
-                ngon_ngu: values.ngon_ngu || 'Tiếng Việt',
-                so_trang: values.so_trang || null,
-                ghi_chu: values.ghi_chu || null,
-                nguoi_ky_id: values.nguoi_ky_id || null,
-                chuc_vu_nguoi_ky: values.chuc_vu_nguoi_ky || null,
-                noi_nhan: values.noi_nhan || null,
-                muc_do_khan: values.muc_do_khan || null,
-                han_tra_loi: values.han_tra_loi
-                    ? values.han_tra_loi.format('YYYY-MM-DD')
-                    : null,
-                stt_trong_ho_so: values.stt_trong_ho_so || null,
-                ma_ho_so: values.ma_ho_so || null
+            const formData = new FormData();
+            const appendIfPresent = (key, value) => {
+                if (value !== undefined && value !== null && value !== '') {
+                    formData.append(key, value);
+                }
             };
 
-            await axios.post(`${BASE_URL}/api/van-ban-di/`, payload, {
-                headers: {
-                    ...getAuthHeaders(),
-                    'Content-Type': 'application/json'
-                }
+            appendIfPresent('so_ky_hieu', values.so_ky_hieu);
+            if (values.ngay_ban_hanh) {
+                formData.append('ngay_ban_hanh', values.ngay_ban_hanh.format('YYYY-MM-DD'));
+            }
+            appendIfPresent('trich_yeu', values.trich_yeu);
+            appendIfPresent('don_vi_soan_thao_id', values.don_vi_soan_thao_id);
+            appendIfPresent('ma_loai_vb_id', values.ma_loai_vb_id);
+            appendIfPresent('ngon_ngu', values.ngon_ngu || 'Tiếng Việt');
+            appendIfPresent('so_trang', values.so_trang);
+            appendIfPresent('ghi_chu', values.ghi_chu);
+            appendIfPresent('nguoi_ky_id', values.nguoi_ky_id);
+            appendIfPresent('chuc_vu_nguoi_ky', values.chuc_vu_nguoi_ky);
+            appendIfPresent('noi_nhan', values.noi_nhan);
+            appendIfPresent('muc_do_khan', values.muc_do_khan);
+            if (values.han_tra_loi) {
+                formData.append('han_tra_loi', values.han_tra_loi.format('YYYY-MM-DD'));
+            }
+            appendIfPresent('stt_trong_ho_so', values.stt_trong_ho_so);
+            appendIfPresent('ma_ho_so', values.ma_ho_so);
+
+            fileList.forEach((file) => {
+                formData.append('files', file.originFileObj || file);
             });
 
-            message.success('Tạo văn bản đi thành công!');
+            if (isEditMode) {
+                await axios.put(`${BASE_URL}/api/van-ban-di/${id}`, formData, {
+                    headers: {
+                        ...getAuthHeaders()
+                    }
+                });
+                message.success('Cập nhật văn bản đi thành công!');
+            } else {
+                await axios.post(`${BASE_URL}/api/van-ban-di/`, formData, {
+                    headers: {
+                        ...getAuthHeaders()
+                    }
+                });
+                message.success('Tạo văn bản đi thành công!');
+            }
+
             form.resetFields();
+            setFileList([]);
             navigate('/van-ban-di');
         } catch (error) {
             const errorMsg =
@@ -126,7 +191,7 @@ const CreateVanBanDi = () => {
     };
 
     return (
-        <Card title="Thêm Văn bản đi" style={{ borderRadius: 12 }}>
+        <Card title={isEditMode ? 'Chỉnh sửa Văn bản đi' : 'Thêm Văn bản đi'} style={{ borderRadius: 12 }}>
             <Spin spinning={loadingOptions}>
                 <Form
                     form={form}
@@ -248,6 +313,31 @@ const CreateVanBanDi = () => {
                     </Row>
 
                     <Row>
+                        <Col span={24}>
+                            <Title level={5} style={{ marginBottom: 12 }}>
+                                Tệp đính kèm
+                            </Title>
+                            <Dragger
+                                accept=".pdf,.doc,.docx"
+                                multiple
+                                fileList={fileList}
+                                beforeUpload={() => false}
+                                onChange={({ fileList: newFileList }) => setFileList(newFileList)}
+                            >
+                                <p className="ant-upload-drag-icon">
+                                    <InboxOutlined />
+                                </p>
+                                <p className="ant-upload-text">
+                                    Kéo thả tệp vào đây hoặc bấm để chọn file
+                                </p>
+                                <p className="ant-upload-hint">
+                                    Chỉ chấp nhận file PDF, DOC, DOCX
+                                </p>
+                            </Dragger>
+                        </Col>
+                    </Row>
+
+                    <Row style={{ marginTop: 16 }}>
                         <Col span={24} style={{ textAlign: 'right' }}>
                             <Button
                                 type="default"
@@ -257,7 +347,7 @@ const CreateVanBanDi = () => {
                                 Hủy
                             </Button>
                             <Button type="primary" htmlType="submit" loading={loading}>
-                                Lưu
+                                {isEditMode ? 'Cập nhật' : 'Lưu'}
                             </Button>
                         </Col>
                     </Row>

@@ -4,6 +4,8 @@ from fastapi.middleware.cors import CORSMiddleware
 # 1. Import CÁC MODELS MỚI (chỉ cần 3 file này là đủ 16 bảng)
 from app.models import auth, core, document
 
+from fastapi.staticfiles import StaticFiles
+
 # 2. Import các routes (Tạm tắt các file chưa sửa)
 from app.routes import auth_routes
 from app.routes import tai_khoan_routes
@@ -31,7 +33,10 @@ app.add_middleware(
     allow_methods=["*"],  # Cho phép mọi phương thức GET, POST, PUT, DELETE
     # Cho phép mọi header (bao gồm cả Authorization chứa Token)
     allow_headers=["*"],
+
 )
+
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 # 4. Đăng ký các API Routes (Chỉ bật 2 API đã sửa)
 app.include_router(auth_routes.router)

@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { Card, Table, Button, Space, Tag, message } from 'antd';
+import { PaperClipOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-
+import { Card, Table, Button, Space, Tag, message, Popconfirm } from 'antd';
 const BASE_URL = 'http://localhost:8000';
 
 const ListVanBanDi = () => {
@@ -28,6 +28,18 @@ const ListVanBanDi = () => {
             message.error('Không thể tải danh sách văn bản đi.');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleDelete = async (id) => {
+        try {
+            await axios.delete(`${BASE_URL}/api/van-ban-di/${id}`, {
+                headers: getAuthHeaders()
+            });
+            message.success('Đã xóa văn bản thành công!');
+            fetchVanBanDi(); // Gọi lại hàm này để load lại bảng dữ liệu mới nhất
+        } catch (error) {
+            message.error('Lỗi khi xóa văn bản. Vui lòng thử lại!');
         }
     };
 
@@ -58,15 +70,64 @@ const ListVanBanDi = () => {
                 value ? <Tag color="blue">{value}</Tag> : <Tag color="default">--</Tag>
         },
         {
+            title: 'Tệp đính kèm',
+            key: 'tep_dinh_kems',
+            width: 240,
+            render: (_, record) => {
+                const files = record.tep_dinh_kems || [];
+
+                if (!files.length) {
+                    return <Tag color="default">--</Tag>;
+                }
+
+                return (
+                    <Space size="small" wrap>
+                        {files.map((file) => {
+                            const normalizedPath = file.duong_dan.replaceAll('\\', '/');
+                            const fileUrl = normalizedPath.startsWith('/')
+                                ? `http://localhost:8000${normalizedPath}`
+                                : `http://localhost:8000/${normalizedPath}`;
+
+                            return (
+                                <a
+                                    key={file.id}
+                                    href={fileUrl}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                                >
+                                    <PaperClipOutlined />
+                                    {file.ten_file}
+                                </a>
+                            );
+                        })}
+                    </Space>
+                );
+            }
+        },
+        {
             title: 'Hành động',
             key: 'action',
             width: 180,
-            render: () => (
+            render: (_, record) => (
                 <Space size="middle">
-                    <Button type="link">Xem/Sửa</Button>
-                    <Button type="link" danger>
-                        Xóa
+                    {/* Tạm thời gắn đường dẫn ảo cho nút Sửa */}
+                    <Button type="link" onClick={() => navigate(`/sua-van-ban/${record.id}`)}>
+                        Xem/Sửa
                     </Button>
+
+                    {/* Bọc nút Xóa trong Popconfirm */}
+                    <Popconfirm
+                        title="Xóa văn bản đi"
+                        description="Bạn có chắc chắn muốn xóa văn bản này không?"
+                        onConfirm={() => handleDelete(record.id)}
+                        okText="Có, xóa đi"
+                        cancelText="Hủy"
+                    >
+                        <Button type="link" danger>
+                            Xóa
+                        </Button>
+                    </Popconfirm>
                 </Space>
             )
         }

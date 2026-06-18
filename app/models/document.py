@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, String, Text, Date, ForeignKey, Float, DateTime
+from sqlalchemy.orm import relationship
 from config.database import Base
 from datetime import datetime
 
@@ -51,6 +52,12 @@ class VanBanDi(Base):
     ma_ho_so = Column(String(50), ForeignKey(
         "ho_so.ma_ho_so", ondelete="SET NULL"))
 
+    tep_dinh_kems = relationship(
+        "FileDinhKem",
+        back_populates="van_ban",
+        cascade="all, delete-orphan"
+    )
+
 
 class NoiNhanVanBan(Base):
     __tablename__ = "noi_nhan_van_ban"
@@ -66,12 +73,15 @@ class FileDinhKem(Base):
     __tablename__ = "file_dinh_kem"
     id = Column(Integer, primary_key=True, index=True)
     loai_van_ban = Column(String(20), nullable=False)
-    van_ban_id = Column(Integer, nullable=False)
+    van_ban_id = Column(Integer, ForeignKey(
+        "van_ban_di.id", ondelete="CASCADE"), nullable=False)
     ten_file = Column(String(255), nullable=False)
     duong_dan = Column(String(500), nullable=False)
     dinh_dang = Column(String(10))
     dung_luong = Column(Float)
     ngay_tao = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    van_ban = relationship("VanBanDi", back_populates="tep_dinh_kems")
 
 
 class DanhMucLoaiQuyetDinh(Base):
