@@ -51,7 +51,7 @@ class VanBanDi(Base):
     stt_trong_ho_so = Column(Integer)
     ma_ho_so = Column(String(50), ForeignKey(
         "ho_so.ma_ho_so", ondelete="SET NULL"))
-
+    so_luong_ban_phat_hanh = Column(Integer, nullable=True)
     tep_dinh_kems = relationship(
         "FileDinhKem",
         back_populates="van_ban",

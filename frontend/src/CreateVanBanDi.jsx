@@ -112,6 +112,7 @@ const CreateVanBanDi = () => {
                     chuc_vu_nguoi_ky: data.chuc_vu_nguoi_ky,
                     noi_nhan: data.noi_nhan,
                     muc_do_khan: data.muc_do_khan,
+                    so_luong_ban_phat_hanh: data.so_luong_ban_phat_hanh,
                     han_tra_loi: data.han_tra_loi ? dayjs(data.han_tra_loi) : null,
                     stt_trong_ho_so: data.stt_trong_ho_so,
                     ma_ho_so: data.ma_ho_so,
@@ -151,6 +152,7 @@ const CreateVanBanDi = () => {
             appendIfPresent('chuc_vu_nguoi_ky', values.chuc_vu_nguoi_ky);
             appendIfPresent('noi_nhan', values.noi_nhan);
             appendIfPresent('muc_do_khan', values.muc_do_khan);
+            appendIfPresent('so_luong_ban_phat_hanh', values.so_luong_ban_phat_hanh);
             if (values.han_tra_loi) {
                 formData.append('han_tra_loi', values.han_tra_loi.format('YYYY-MM-DD'));
             }
@@ -183,7 +185,7 @@ const CreateVanBanDi = () => {
         } catch (error) {
             const errorMsg =
                 error?.response?.data?.detail ||
-                'Có lỗi xảy ra khi tạo văn bản đi.';
+                'Có lỗi xảy ra khi lưu văn bản đi.';
             message.error(errorMsg);
         } finally {
             setLoading(false);
@@ -289,6 +291,10 @@ const CreateVanBanDi = () => {
                                         { label: '5', value: 5 }
                                     ]}
                                 />
+                            </Form.Item>
+
+                            <Form.Item label="Số lượng bản phát hành" name="so_luong_ban_phat_hanh">
+                                <Input type="number" placeholder="Ví dụ: 10" />
                             </Form.Item>
 
                             <Form.Item label="Hạn trả lời" name="han_tra_loi">

@@ -32,6 +32,7 @@ class VanBanDiCreate(BaseModel):
     han_tra_loi: Optional[date] = None
     stt_trong_ho_so: Optional[int] = None
     ma_ho_so: Optional[str] = None
+    so_luong_ban_phat_hanh: Optional[int] = None
 
 
 class VanBanDiResponse(BaseModel):
@@ -52,6 +53,7 @@ class VanBanDiResponse(BaseModel):
     stt_trong_ho_so: Optional[int] = None
     ma_ho_so: Optional[str] = None
     tep_dinh_kems: Optional[List[FileDinhKemResponse]] = None
+    so_luong_ban_phat_hanh: Optional[int] = None
 
     class Config:
         from_attributes = True

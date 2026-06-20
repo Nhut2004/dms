@@ -35,6 +35,7 @@ async def tao_van_ban_di(
     stt_trong_ho_so: Annotated[Optional[int], Form()] = None,
     ma_ho_so: Annotated[Optional[str], Form()] = None,
     files: List[UploadFile] = File(default=[]),
+    so_luong_ban_phat_hanh: Annotated[Optional[int], Form()] = None,
     db: Session = Depends(get_db),
     nguoi_dung: TaiKhoan = Depends(lay_nguoi_dung_hien_tai)
 ):
@@ -54,6 +55,7 @@ async def tao_van_ban_di(
         han_tra_loi=han_tra_loi,
         stt_trong_ho_so=stt_trong_ho_so,
         ma_ho_so=ma_ho_so,
+        so_luong_ban_phat_hanh=so_luong_ban_phat_hanh
     )
 
     van_ban_moi = VanBanDi(**van_ban_data.model_dump())
@@ -116,6 +118,7 @@ async def cap_nhat_van_ban_di(
     stt_trong_ho_so: Annotated[Optional[int], Form()] = None,
     ma_ho_so: Annotated[Optional[str], Form()] = None,
     files: List[UploadFile] = File(default=[]),
+    so_luong_ban_phat_hanh: Annotated[Optional[int], Form()] = None,
     db: Session = Depends(get_db),
     nguoi_dung: TaiKhoan = Depends(lay_nguoi_dung_hien_tai)
 ):
@@ -137,6 +140,7 @@ async def cap_nhat_van_ban_di(
     van_ban.noi_nhan = noi_nhan
     van_ban.muc_do_khan = muc_do_khan
     van_ban.han_tra_loi = han_tra_loi
+    van_ban.so_luong_ban_phat_hanh = so_luong_ban_phat_hanh
     van_ban.stt_trong_ho_so = stt_trong_ho_so
     van_ban.ma_ho_so = ma_ho_so
 
