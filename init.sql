@@ -555,6 +555,8 @@ VALUES
     ('DIEU_DONG', 'Quyet dinh dieu dong', NULL),
     ('KHAC', 'Quyet dinh khac', NULL);
 
+ALTER TABLE van_ban_di ADD COLUMN so_luong_ban_phat_hanh INTEGER;
+
 COMMIT;
 
 -- =====================================================================

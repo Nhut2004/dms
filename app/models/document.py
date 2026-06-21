@@ -28,6 +28,11 @@ class VanBanDen(Base):
     stt_trong_ho_so = Column(Integer)
     ma_ho_so = Column(String(50), ForeignKey(
         "ho_so.ma_ho_so", ondelete="SET NULL"))
+    tep_dinh_kems = relationship(
+        "FileDinhKem",
+        primaryjoin="and_(VanBanDen.id == foreign(FileDinhKem.van_ban_id), FileDinhKem.loai_van_ban == 'VAN_BAN_DEN')",
+        viewonly=True
+    )
 
 
 class VanBanDi(Base):
