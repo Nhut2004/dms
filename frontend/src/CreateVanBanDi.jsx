@@ -13,7 +13,8 @@ import {
     Upload,
     message,
     Spin,
-    Typography
+    Typography,
+    InputNumber
 } from 'antd';
 import { InboxOutlined } from '@ant-design/icons';
 import axios from 'axios';
@@ -34,6 +35,7 @@ const CreateVanBanDi = () => {
     const [danhMucOptions, setDanhMucOptions] = useState([]);
     const [hoSoOptions, setHoSoOptions] = useState([]);
     const [fileList, setFileList] = useState([]);
+    const [canBoOptions, setCanBoOptions] = useState([]);
 
     const getAuthHeaders = () => {
         const token = localStorage.getItem('access_token');
@@ -46,16 +48,11 @@ const CreateVanBanDi = () => {
         const fetchOptions = async () => {
             setLoadingOptions(true);
             try {
-                const [coQuanRes, danhMucRes, hoSoRes] = await Promise.all([
-                    axios.get(`${BASE_URL}/api/co-quan/`, {
-                        headers: getAuthHeaders()
-                    }),
-                    axios.get(`${BASE_URL}/api/danh-muc/`, {
-                        headers: getAuthHeaders()
-                    }),
-                    axios.get(`${BASE_URL}/api/ho-so/`, {
-                        headers: getAuthHeaders()
-                    })
+                const [coQuanRes, danhMucRes, hoSoRes, canBoRes] = await Promise.all([
+                    axios.get(`${BASE_URL}/api/co-quan/`, { headers: getAuthHeaders() }),
+                    axios.get(`${BASE_URL}/api/danh-muc/`, { headers: getAuthHeaders() }),
+                    axios.get(`${BASE_URL}/api/ho-so/`, { headers: getAuthHeaders() }),
+                    axios.get(`${BASE_URL}/api/can-bo/`, { headers: getAuthHeaders() })
                 ]);
 
                 setCoQuanOptions(
@@ -77,6 +74,12 @@ const CreateVanBanDi = () => {
                         label: item.ma_ho_so,
                         value: item.ma_ho_so
                     }))
+                );
+                setCanBoOptions((canBoRes.data || []).map(item => ({
+                    label: `${item.ho_ten} ${item.chuc_vu ? `(${item.chuc_vu})` : ''}`,
+                    value: item.id,
+                    chuc_vu: item.chuc_vu
+                }))
                 );
             } catch (error) {
                 message.error('Không thể tải dữ liệu dropdown. Vui lòng đăng nhập lại.');
@@ -256,7 +259,7 @@ const CreateVanBanDi = () => {
                             </Form.Item>
 
                             <Form.Item label="Số trang" name="so_trang">
-                                <Input type="number" placeholder="Nhập số trang" />
+                                <InputNumber min={0} precision={0} style={{ width: '100%' }} placeholder="Nhập số trang" />
                             </Form.Item>
 
                             <Form.Item label="Ghi chú" name="ghi_chu">
@@ -265,15 +268,22 @@ const CreateVanBanDi = () => {
                         </Col>
 
                         <Col span={12}>
-                            <Form.Item label="Người ký" name="nguoi_ky_id">
+                            <Form.Item name="nguoi_ky_id" label="Người ký">
                                 <Select
-                                    placeholder="Chọn người ký"
-                                    options={[]}
+                                    showSearch
+                                    options={canBoOptions}
+                                    placeholder="Chọn người ký văn bản"
+                                    filterOption={(input, option) => (option?.label ?? '').toLowerCase().includes(input.toLowerCase())}
+                                    allowClear
+                                    onChange={(value, option) => {
+                                        // Phép thuật Auto-fill nằm ở đây:
+                                        form.setFieldsValue({ chuc_vu_nguoi_ky: option?.chuc_vu || '' });
+                                    }}
                                 />
                             </Form.Item>
 
                             <Form.Item label="Chức vụ người ký" name="chuc_vu_nguoi_ky">
-                                <Input placeholder="Ví dụ: Hiệu trưởng" />
+                                <Input placeholder="Hệ thống tự điền..." readOnly style={{ backgroundColor: '#f5f5f5' }} />
                             </Form.Item>
 
                             <Form.Item label="Nơi nhận" name="noi_nhan">
@@ -297,8 +307,24 @@ const CreateVanBanDi = () => {
                                 <Input type="number" placeholder="Ví dụ: 10" />
                             </Form.Item>
 
-                            <Form.Item label="Hạn trả lời" name="han_tra_loi">
-                                <DatePicker style={{ width: '100%' }} format="YYYY-MM-DD" />
+                            <Form.Item
+                                label="Hạn trả lời"
+                                name="han_tra_loi"
+                                dependencies={['ngay_ban_hanh']}
+                                rules={[
+                                    ({ getFieldValue }) => ({
+                                        validator(_, value) {
+                                            if (!value || !getFieldValue('ngay_ban_hanh')) return Promise.resolve();
+
+                                            if (value.isBefore(getFieldValue('ngay_ban_hanh'), 'day')) {
+                                                return Promise.reject(new Error('Hạn trả lời KHÔNG ĐƯỢC trước Ngày ban hành!'));
+                                            }
+                                            return Promise.resolve();
+                                        },
+                                    }),
+                                ]}
+                            >
+                                <DatePicker style={{ width: '100%' }} format="DD/MM/YYYY" />
                             </Form.Item>
 
                             <Form.Item label="Số thứ tự trong hồ sơ" name="stt_trong_ho_so">

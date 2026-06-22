@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Space, Input, Modal, Form, DatePicker, InputNumber, Select, message, Popconfirm, Row, Col, Upload } from 'antd';
+import { Table, Button, Space, Input, Modal, Form, DatePicker, InputNumber, Select, message, Popconfirm, Row, Col, Upload, Tooltip, Tag } from 'antd';
 import { EditOutlined, DeleteOutlined, PlusOutlined, SearchOutlined, InboxOutlined, PaperClipOutlined } from '@ant-design/icons';
 import axios from 'axios';
 import dayjs from 'dayjs';
@@ -21,7 +21,7 @@ const ListVanBanDen = () => {
     const [coQuanOptions, setCoQuanOptions] = useState([]);
     const [danhMucOptions, setDanhMucOptions] = useState([]);
     const [hoSoOptions, setHoSoOptions] = useState([]);
-
+    const [canBoOptions, setCanBoOptions] = useState([]);
     const apiUrl = `${BASE_URL}/api/van-ban-den/`;
 
     const getAuthHeaders = () => {
@@ -31,14 +31,19 @@ const ListVanBanDen = () => {
 
     const fetchOptions = async () => {
         try {
-            const [coQuanRes, danhMucRes, hoSoRes] = await Promise.all([
+            const [coQuanRes, danhMucRes, hoSoRes, canBoRes] = await Promise.all([
                 axios.get(`${BASE_URL}/api/co-quan/`, { headers: getAuthHeaders() }),
                 axios.get(`${BASE_URL}/api/danh-muc/`, { headers: getAuthHeaders() }),
-                axios.get(`${BASE_URL}/api/ho-so/`, { headers: getAuthHeaders() })
+                axios.get(`${BASE_URL}/api/ho-so/`, { headers: getAuthHeaders() }),
+                axios.get(`${BASE_URL}/api/can-bo/`, { headers: getAuthHeaders() })
             ]);
             setCoQuanOptions((coQuanRes.data || []).map(item => ({ label: item.ten_co_quan, value: item.id })));
             setDanhMucOptions((danhMucRes.data || []).map(item => ({ label: item.ten_loai_vb, value: item.id })));
             setHoSoOptions((hoSoRes.data || []).map(item => ({ label: item.ma_ho_so, value: item.ma_ho_so })));
+            setCanBoOptions((canBoRes.data || []).map(item => ({
+                label: `${item.ho_ten} ${item.chuc_vu ? `(${item.chuc_vu})` : ''}`,
+                value: item.id
+            })));
         } catch (error) {
             console.error('Lỗi tải danh mục');
         }
@@ -161,21 +166,66 @@ const ListVanBanDen = () => {
         { title: 'Trích yếu', dataIndex: 'trich_yeu', ellipsis: true },
         // CỘT HIỂN THỊ FILE ĐÍNH KÈM
         {
-            title: 'File đính kèm',
+            title: 'Tệp đính kèm',
             key: 'tep_dinh_kems',
-            width: 220,
+            width: 250, // Độ rộng cố định cho cột
             render: (_, record) => {
                 const files = record.tep_dinh_kems || [];
                 if (!files.length) return <span style={{ color: '#bfbfbf' }}>Không có file</span>;
+
                 return (
-                    <Space size="small" wrap>
-                        {files.map((f, i) => (
-                            <a key={i} href={`${BASE_URL}/${f.duong_dan.replaceAll('\\', '/')}`} target="_blank" rel="noreferrer">
-                                <PaperClipOutlined /> {f.ten_file}
-                            </a>
-                        ))}
-                    </Space>
+                    // Đổi Space thành div flex column để mỗi file nằm 1 dòng cho gọn
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        {files.map((file, i) => {
+                            // Xử lý đường dẫn file (Nếu đang ở file Văn bản đi thì dùng logic URL của bạn)
+                            const normalizedPath = file.duong_dan.replaceAll('\\', '/');
+                            const fileUrl = normalizedPath.startsWith('/') ? `${BASE_URL}${normalizedPath}` : `${BASE_URL}/${normalizedPath}`;
+
+                            return (
+                                /* Bọc bằng Tooltip để khi di chuột vào hiện full tên */
+                                <Tooltip title={file.ten_file} key={file.id || i} placement="topLeft">
+                                    <a
+                                        href={fileUrl}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        style={{
+                                            display: 'block',
+                                            maxWidth: '220px',      // Giới hạn chiều dài tối đa
+                                            whiteSpace: 'nowrap',   // Ép không cho rớt dòng
+                                            overflow: 'hidden',     // Phần thừa ra sẽ bị giấu đi
+                                            textOverflow: 'ellipsis'// Thêm dấu 3 chấm (...) ở cuối
+                                        }}
+                                    >
+                                        <PaperClipOutlined style={{ marginRight: '4px' }} />
+                                        {file.ten_file}
+                                    </a>
+                                </Tooltip>
+                            );
+                        })}
+                    </div>
                 );
+            }
+        },
+        {
+            title: 'Hạn giải quyết',
+            dataIndex: 'han_giai_quyet',
+            width: 170,
+            render: (text) => {
+                if (!text) return <span style={{ color: '#bfbfbf' }}>Không có hạn</span>;
+
+                const deadline = dayjs(text);
+                const today = dayjs().startOf('day');
+                const diffDays = deadline.diff(today, 'day'); // Tính số ngày còn lại
+
+                const formattedDate = deadline.format('DD/MM/YYYY');
+
+                if (diffDays < 0) {
+                    return <Tag color="error">Quá hạn ({formattedDate})</Tag>;
+                } else if (diffDays <= 3) {
+                    return <Tag color="warning">Sắp hết hạn ({formattedDate})</Tag>;
+                } else {
+                    return <Tag color="success">Còn hạn ({formattedDate})</Tag>;
+                }
             }
         },
         {
@@ -220,6 +270,9 @@ const ListVanBanDen = () => {
                         </Col>
                         <Col span={12}>
                             <Form.Item name="ngon_ngu" label="Ngôn ngữ"><Input /></Form.Item>
+                            <Form.Item name="linh_vuc" label="Lĩnh vực">
+                                <Input placeholder="Ví dụ: Giáo dục, Y tế, Xây dựng..." />
+                            </Form.Item>
                             <Form.Item name="so_trang" label="Số trang"><InputNumber style={{ width: '100%' }} min={1} /></Form.Item>
                             <Form.Item name="ho_ten_nguoi_ky" label="Họ tên người ký"><Input placeholder="Ví dụ: Nguyễn Văn A" /></Form.Item>
                             <Form.Item name="chuc_vu_nguoi_ky" label="Chức vụ người ký"><Input placeholder="Ví dụ: Giám đốc" /></Form.Item>
@@ -229,7 +282,27 @@ const ListVanBanDen = () => {
                                     <Select.Option value={1}>Thường</Select.Option><Select.Option value={2}>Khẩn</Select.Option><Select.Option value={3}>Thượng khẩn</Select.Option><Select.Option value={4}>Hỏa tốc</Select.Option>
                                 </Select>
                             </Form.Item>
-                            <Form.Item name="han_giai_quyet" label="Hạn giải quyết"><DatePicker style={{ width: '100%' }} format="DD/MM/YYYY" /></Form.Item>
+                            <Form.Item
+                                name="han_giai_quyet"
+                                label="Hạn giải quyết"
+                                dependencies={['ngay_den']}
+                                rules={[
+                                    ({ getFieldValue }) => ({
+                                        validator(_, value) {
+                                            // Nếu chưa chọn 1 trong 2 ngày thì bỏ qua không báo lỗi vội
+                                            if (!value || !getFieldValue('ngay_den')) return Promise.resolve();
+
+                                            // Nếu Hạn giải quyết < Ngày đến => Bật báo động đỏ!
+                                            if (value.isBefore(getFieldValue('ngay_den'), 'day')) {
+                                                return Promise.reject(new Error('Hạn giải quyết KHÔNG ĐƯỢC trước Ngày đến!'));
+                                            }
+                                            return Promise.resolve();
+                                        },
+                                    }),
+                                ]}
+                            >
+                                <DatePicker style={{ width: '100%' }} format="DD/MM/YYYY" />
+                            </Form.Item>
                             <Form.Item name="ma_ho_so" label="Đưa vào hồ sơ">
                                 <Select showSearch options={hoSoOptions} placeholder="Chọn mã hồ sơ lưu trữ" allowClear filterOption={(input, option) => (option?.label ?? '').toLowerCase().includes(input.toLowerCase())} />
                             </Form.Item>
