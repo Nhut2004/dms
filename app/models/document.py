@@ -77,16 +77,17 @@ class NoiNhanVanBan(Base):
 class FileDinhKem(Base):
     __tablename__ = "file_dinh_kem"
     id = Column(Integer, primary_key=True, index=True)
+    # 'VAN_BAN_DEN' hoặc 'VAN_BAN_DI'
     loai_van_ban = Column(String(20), nullable=False)
-    van_ban_id = Column(Integer, ForeignKey(
-        "van_ban_di.id", ondelete="CASCADE"), nullable=False)
+
+    # BỎ ForeignKey ở đây đi, chỉ giữ lại Integer để lưu ID tự do
+    van_ban_id = Column(Integer, index=True, nullable=False)
+
     ten_file = Column(String(255), nullable=False)
     duong_dan = Column(String(500), nullable=False)
     dinh_dang = Column(String(10))
     dung_luong = Column(Float)
     ngay_tao = Column(DateTime, default=datetime.utcnow, nullable=False)
-
-    van_ban = relationship("VanBanDi", back_populates="tep_dinh_kems")
 
 
 class DanhMucLoaiQuyetDinh(Base):

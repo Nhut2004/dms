@@ -79,7 +79,20 @@ def xoa_van_ban_den(
     db.delete(db_van_ban)
     db.commit()
     return {"message": "Đã xóa văn bản đến thành công!"}
-# @router.get("/{van_ban_id}", response_model=VanBanDenResponse)
+
+
+@router.get("/{van_ban_id}", response_model=VanBanDenResponse)
+def lay_chi_tiet_van_ban_den(
+    van_ban_id: int,
+    db: Session = Depends(get_db),
+    nguoi_dung: TaiKhoan = Depends(lay_nguoi_dung_hien_tai)
+):
+    db_van_ban = db.query(VanBanDen).filter(VanBanDen.id == van_ban_id).first()
+    if not db_van_ban:
+        raise HTTPException(
+            status_code=404, detail="Không tìm thấy văn bản đến này!")
+
+    return db_van_ban
 
 
 # Tạo sẵn thư mục trên ổ cứng để chứa file văn bản đến
