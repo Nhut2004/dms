@@ -59,8 +59,8 @@ class VanBanDi(Base):
     so_luong_ban_phat_hanh = Column(Integer, nullable=True)
     tep_dinh_kems = relationship(
         "FileDinhKem",
-        back_populates="van_ban",
-        cascade="all, delete-orphan"
+        primaryjoin="and_(VanBanDi.id == foreign(FileDinhKem.van_ban_id), FileDinhKem.loai_van_ban == 'VAN_BAN_DI')",
+        viewonly=True
     )
 
 

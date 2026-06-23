@@ -31,6 +31,21 @@ def tao_van_ban_den(
         raise HTTPException(
             status_code=400, detail="Số đến đã tồn tại trong hệ thống!")
 
+    # --- BLOCK VALIDATE NGHIỆP VỤ ---
+    if van_ban.han_giai_quyet and van_ban.ngay_den:
+        if van_ban.han_giai_quyet < van_ban.ngay_den:
+            raise HTTPException(
+                status_code=400,
+                detail="Lỗi nghiệp vụ: Hạn giải quyết KHÔNG ĐƯỢC trước Ngày đến!"
+            )
+
+    if van_ban.so_trang is not None and van_ban.so_trang < 0:
+        raise HTTPException(
+            status_code=400,
+            detail="Lỗi dữ liệu: Số trang không được là số âm!"
+        )
+    # --------------------------------
+
     van_ban_moi = VanBanDen(**van_ban.model_dump())
     db.add(van_ban_moi)
     db.commit()
@@ -54,6 +69,25 @@ def cap_nhat_van_ban_den(
     if not db_van_ban:
         raise HTTPException(
             status_code=404, detail="Không tìm thấy văn bản đến này!")
+
+    # --- BLOCK VALIDATE NGHIỆP VỤ KHI CẬP NHẬT ---
+    ngay_den_check = van_ban_update.ngay_den if van_ban_update.ngay_den else db_van_ban.ngay_den
+    han_giai_quyet_check = van_ban_update.han_giai_quyet if van_ban_update.han_giai_quyet else db_van_ban.han_giai_quyet
+
+    if han_giai_quyet_check and ngay_den_check:
+        if han_giai_quyet_check < ngay_den_check:
+            raise HTTPException(
+                status_code=400,
+                detail="Lỗi nghiệp vụ: Hạn giải quyết KHÔNG ĐƯỢC trước Ngày đến!"
+            )
+
+    so_trang_check = van_ban_update.so_trang if van_ban_update.so_trang is not None else db_van_ban.so_trang
+    if so_trang_check is not None and so_trang_check < 0:
+        raise HTTPException(
+            status_code=400,
+            detail="Lỗi dữ liệu: Số trang không được là số âm!"
+        )
+    # --------------------------------
 
     # Cập nhật các trường có dữ liệu gửi lên
     update_data = van_ban_update.model_dump(exclude_unset=True)
@@ -123,13 +157,23 @@ def upload_file_van_ban_den(
 
         saved_files.append(file.filename)
 
+        # Tính toán định dạng và dung lượng
+        ext = file.filename.split(
+            ".")[-1].lower() if "." in file.filename else None
+        file_size = os.path.getsize(file_path)
+
+        # Đổi dấu \ thành / để đường dẫn đồng nhất và không bị lỗi hiển thị trên React
+        normalized_path = file_path.replace("\\", "/")
+
         new_file = FileDinhKem(
             ten_file=file.filename,
-            duong_dan=file_path,
+            duong_dan=normalized_path,
             van_ban_id=van_ban_id,
-            loai_van_ban="VAN_BAN_DEN"
+            loai_van_ban="VAN_BAN_DEN",
+            dinh_dang=ext,
+            dung_luong=float(file_size / 1024)
         )
         db.add(new_file)
 
-    db.commit()  # Mở comment dòng này nếu có lưu vào DB ở trên
+    db.commit()
     return {"message": f"Đã tải lên {len(saved_files)} file thành công!", "files": saved_files}

@@ -273,7 +273,22 @@ const ListVanBanDen = () => {
                             <Form.Item name="linh_vuc" label="Lĩnh vực">
                                 <Input placeholder="Ví dụ: Giáo dục, Y tế, Xây dựng..." />
                             </Form.Item>
-                            <Form.Item name="so_trang" label="Số trang"><InputNumber style={{ width: '100%' }} min={1} /></Form.Item>
+                            <Form.Item
+                                name="so_trang"
+                                label="Số trang"
+                                rules={[
+                                    () => ({
+                                        validator(_, value) {
+                                            if (value !== undefined && value !== null && value < 0) {
+                                                return Promise.reject(new Error('Số trang không được là số âm!'));
+                                            }
+                                            return Promise.resolve();
+                                        },
+                                    }),
+                                ]}
+                            >
+                                <InputNumber style={{ width: '100%' }} precision={0} />
+                            </Form.Item>
                             <Form.Item name="ho_ten_nguoi_ky" label="Họ tên người ký"><Input placeholder="Ví dụ: Nguyễn Văn A" /></Form.Item>
                             <Form.Item name="chuc_vu_nguoi_ky" label="Chức vụ người ký"><Input placeholder="Ví dụ: Giám đốc" /></Form.Item>
                             <Form.Item name="don_vi_nhan" label="Nơi nhận nội bộ"><Input placeholder="Phòng Hành chính, Phòng Kế toán..." /></Form.Item>

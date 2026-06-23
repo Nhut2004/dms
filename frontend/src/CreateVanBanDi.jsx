@@ -258,8 +258,22 @@ const CreateVanBanDi = () => {
                                 <Input placeholder="Ví dụ: Tiếng Việt" />
                             </Form.Item>
 
-                            <Form.Item label="Số trang" name="so_trang">
-                                <InputNumber min={0} precision={0} style={{ width: '100%' }} placeholder="Nhập số trang" />
+                            <Form.Item
+                                label="Số trang"
+                                name="so_trang"
+                                rules={[
+                                    () => ({
+                                        validator(_, value) {
+                                            if (value !== undefined && value !== null && value < 0) {
+                                                return Promise.reject(new Error('Số trang không được là số âm!'));
+                                            }
+                                            return Promise.resolve();
+                                        },
+                                    }),
+                                ]}
+                            >
+                                {/* Xóa min={0} ở đây để nó không tự ép về 0 nữa */}
+                                <InputNumber precision={0} style={{ width: '100%' }} placeholder="Nhập số trang" />
                             </Form.Item>
 
                             <Form.Item label="Ghi chú" name="ghi_chu">
@@ -303,7 +317,20 @@ const CreateVanBanDi = () => {
                                 />
                             </Form.Item>
 
-                            <Form.Item label="Số lượng bản phát hành" name="so_luong_ban_phat_hanh">
+                            <Form.Item
+                                label="Số lượng bản phát hành"
+                                name="so_luong_ban_phat_hanh"
+                                rules={[
+                                    () => ({
+                                        validator(_, value) {
+                                            if (value !== undefined && value !== null && value < 0) {
+                                                return Promise.reject(new Error('Số lượng không được là số âm!'));
+                                            }
+                                            return Promise.resolve();
+                                        },
+                                    }),
+                                ]}
+                            >
                                 <Input type="number" placeholder="Ví dụ: 10" />
                             </Form.Item>
 

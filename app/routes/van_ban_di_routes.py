@@ -39,6 +39,27 @@ async def tao_van_ban_di(
     db: Session = Depends(get_db),
     nguoi_dung: TaiKhoan = Depends(lay_nguoi_dung_hien_tai)
 ):
+    # --- BLOCK VALIDATE NGHIỆP VỤ ---
+    if han_tra_loi and ngay_ban_hanh:
+        if han_tra_loi < ngay_ban_hanh:
+            raise HTTPException(
+                status_code=400,
+                detail="Lỗi nghiệp vụ: Hạn trả lời KHÔNG ĐƯỢC trước Ngày ban hành!"
+            )
+
+    if so_trang is not None and so_trang < 0:
+        raise HTTPException(
+            status_code=400,
+            detail="Lỗi dữ liệu: Số trang không được là số âm!"
+        )
+
+    if so_luong_ban_phat_hanh is not None and so_luong_ban_phat_hanh < 0:
+        raise HTTPException(
+            status_code=400,
+            detail="Lỗi dữ liệu: Số lượng bản phát hành không được là số âm!"
+        )
+    # --------------------------------
+
     van_ban_data = VanBanDiCreate(
         so_ky_hieu=so_ky_hieu,
         ngay_ban_hanh=ngay_ban_hanh,
@@ -126,6 +147,32 @@ async def cap_nhat_van_ban_di(
     if not van_ban:
         raise HTTPException(
             status_code=404, detail="Không tìm thấy văn bản đi")
+
+    # --- BLOCK VALIDATE NGHIỆP VỤ KHI CẬP NHẬT ---
+    ngay_ban_hanh_check = ngay_ban_hanh if ngay_ban_hanh else van_ban.ngay_ban_hanh
+    han_tra_loi_check = han_tra_loi if han_tra_loi else van_ban.han_tra_loi
+
+    if han_tra_loi_check and ngay_ban_hanh_check:
+        if han_tra_loi_check < ngay_ban_hanh_check:
+            raise HTTPException(
+                status_code=400,
+                detail="Lỗi nghiệp vụ: Hạn trả lời KHÔNG ĐƯỢC trước Ngày ban hành!"
+            )
+
+    so_trang_check = so_trang if so_trang is not None else van_ban.so_trang
+    if so_trang_check is not None and so_trang_check < 0:
+        raise HTTPException(
+            status_code=400,
+            detail="Lỗi dữ liệu: Số trang không được là số âm!"
+        )
+
+    so_luong_check = so_luong_ban_phat_hanh if so_luong_ban_phat_hanh is not None else van_ban.so_luong_ban_phat_hanh
+    if so_luong_check is not None and so_luong_check < 0:
+        raise HTTPException(
+            status_code=400,
+            detail="Lỗi dữ liệu: Số lượng bản phát hành không được là số âm!"
+        )
+    # --------------------------------
 
     van_ban.so_ky_hieu = so_ky_hieu
     van_ban.ngay_ban_hanh = ngay_ban_hanh
