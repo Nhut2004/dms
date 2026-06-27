@@ -558,6 +558,9 @@ VALUES
 ALTER TABLE van_ban_di ADD COLUMN so_luong_ban_phat_hanh INTEGER;
 ALTER TABLE ho_so ADD COLUMN file_catalog INTEGER;
 ALTER TABLE ho_so ADD COLUMN file_notation VARCHAR(50);
+ALTER TABLE ho_so ADD COLUMN trang_thai VARCHAR(50) DEFAULT 'DANG_MO';
+ALTER TABLE van_ban_den ADD COLUMN trang_thai_xu_ly VARCHAR(50) DEFAULT 'CHO_XU_LY';
+ALTER TABLE van_ban_di ADD COLUMN trang_thai VARCHAR(50) DEFAULT 'DRAFT';
 COMMIT;
 
 -- =====================================================================

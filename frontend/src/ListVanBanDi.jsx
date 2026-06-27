@@ -49,6 +49,21 @@ const ListVanBanDi = () => {
     );
 
     const columns = [
+        {
+            title: 'Trạng thái',
+            dataIndex: 'trang_thai',
+            key: 'trang_thai',
+            width: 140,
+            render: (text) => {
+                let color = 'default';
+                if (text === 'DRAFT') color = 'default';
+                if (text === 'PENDING_APPROVAL') color = 'warning';
+                if (text === 'APPROVED') color = 'blue';
+                if (text === 'PUBLISHED') color = 'success';
+                if (text === 'REVOKED') color = 'error';
+                return <Tag color={color}>{text || 'DRAFT'}</Tag>;
+            }
+        },
         { title: 'Số ký hiệu', dataIndex: 'so_ky_hieu', key: 'so_ky_hieu', width: 180 },
         { title: 'Trích yếu', dataIndex: 'trich_yeu', key: 'trich_yeu', ellipsis: true, render: (text) => text || '--' },
         { title: 'Mã hồ sơ', dataIndex: 'ma_ho_so', key: 'ma_ho_so', width: 180, render: (value) => value ? <Tag color="blue">{value}</Tag> : <Tag color="default">--</Tag> },
@@ -124,7 +139,14 @@ const ListVanBanDi = () => {
                 </Space>
             }
         >
-            <Table rowKey="id" columns={columns} dataSource={filteredData} loading={loading} pagination={{ pageSize: 8 }} />
+            <Table
+                rowKey="id"
+                columns={columns}
+                dataSource={filteredData}
+                loading={loading}
+                pagination={{ pageSize: 8 }}
+                scroll={{ x: 'max-content' }}
+            />
         </Card>
     );
 };

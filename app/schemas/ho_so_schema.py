@@ -8,6 +8,7 @@ class HoSoCreate(BaseModel):
     tieu_de_ho_so: str
     file_catalog: Optional[int] = None
     file_notation: Optional[str] = None
+    trang_thai: Optional[str] = "DANG_MO"
     thoi_han_bao_quan: Optional[str] = None
     che_do_su_dung: Optional[str] = None
     ngay_bat_dau: Optional[date] = None
@@ -24,6 +25,7 @@ class HoSoUpdate(BaseModel):
     tieu_de_ho_so: Optional[str] = None
     file_catalog: Optional[int] = None
     file_notation: Optional[str] = None
+    trang_thai: Optional[str] = None
     thoi_han_bao_quan: Optional[str] = None
     che_do_su_dung: Optional[str] = None
     ngay_bat_dau: Optional[date] = None
@@ -41,6 +43,7 @@ class HoSoResponse(BaseModel):
     tieu_de_ho_so: str
     file_catalog: Optional[int] = None
     file_notation: Optional[str] = None
+    trang_thai: Optional[str] = "DANG_MO"
     thoi_han_bao_quan: Optional[str] = None
     che_do_su_dung: Optional[str] = None
     ngay_bat_dau: Optional[date] = None

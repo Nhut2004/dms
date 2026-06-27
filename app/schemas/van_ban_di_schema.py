@@ -29,6 +29,7 @@ class VanBanDiCreate(BaseModel):
     chuc_vu_nguoi_ky: Optional[str] = None
     noi_nhan: Optional[str] = None
     muc_do_khan: Optional[int] = None
+    trang_thai: Optional[str] = "DRAFT"
     han_tra_loi: Optional[date] = None
     stt_trong_ho_so: Optional[int] = None
     ma_ho_so: Optional[str] = None
@@ -52,6 +53,7 @@ class VanBanDiResponse(BaseModel):
     han_tra_loi: Optional[date] = None
     stt_trong_ho_so: Optional[int] = None
     ma_ho_so: Optional[str] = None
+    trang_thai: Optional[str] = None
     tep_dinh_kems: Optional[List[FileDinhKemResponse]] = None
     so_luong_ban_phat_hanh: Optional[int] = None
 

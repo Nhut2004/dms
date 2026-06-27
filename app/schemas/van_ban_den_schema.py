@@ -22,6 +22,7 @@ class VanBanDenBase(BaseModel):
     don_vi_nhan: Optional[str] = None
     han_giai_quyet: Optional[date] = None
     y_kien_chi_dao: Optional[str] = None
+    trang_thai_xu_ly: Optional[str] = "CHO_XU_LY"
     stt_trong_ho_so: Optional[int] = None
     ma_ho_so: Optional[str] = None
 
@@ -47,6 +48,7 @@ class VanBanDenUpdate(BaseModel):
     don_vi_nhan: Optional[str] = None
     han_giai_quyet: Optional[date] = None
     y_kien_chi_dao: Optional[str] = None
+    trang_thai_xu_ly: Optional[str] = None
     stt_trong_ho_so: Optional[int] = None
     ma_ho_so: Optional[str] = None
 

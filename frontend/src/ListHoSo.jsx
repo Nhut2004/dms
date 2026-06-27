@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Space, Modal, Form, Input, DatePicker, InputNumber, Select, message, Popconfirm } from 'antd';
+import { Tag, Table, Button, Space, Modal, Form, Input, DatePicker, InputNumber, Select, message, Popconfirm } from 'antd';
 import axios from 'axios';
 import dayjs from 'dayjs';
 
@@ -97,6 +97,15 @@ const ListHoSo = () => {
     };
 
     const columns = [
+        {
+            title: 'Trạng thái',
+            dataIndex: 'trang_thai',
+            key: 'trang_thai',
+            render: (text) => {
+                let color = text === 'DANG_MO' ? 'green' : (text === 'DA_DONG' ? 'orange' : 'default');
+                return <Tag color={color}>{text || 'DANG_MO'}</Tag>;
+            }
+        },
         { title: 'Mã hồ sơ', dataIndex: 'ma_ho_so', key: 'ma_ho_so', filteredValue: [searchText], onFilter: (value, record) => record.ma_ho_so.toLowerCase().includes(value.toLowerCase()) || record.tieu_de_ho_so.toLowerCase().includes(value.toLowerCase()) },
         { title: 'Tiêu đề hồ sơ', dataIndex: 'tieu_de_ho_so', key: 'tieu_de_ho_so' },
         { title: 'Thời hạn bảo quản', dataIndex: 'thoi_han_bao_quan', key: 'thoi_han_bao_quan' },
@@ -150,7 +159,7 @@ const ListHoSo = () => {
                     <Form.Item name="che_do_su_dung" label="Chế độ sử dụng">
                         <Select allowClear options={[{ value: 'Mở', label: 'Mở' }, { value: 'Hạn chế', label: 'Hạn chế' }, { value: 'Mật', label: 'Mật' }]} />
                     </Form.Item>
-                    {/* THÊM VỊ TRÍ LƯU TRỮ VÀO ĐÂY */}
+
                     <Form.Item name="vi_tri_id" label="Vị trí lưu trữ">
                         <Select showSearch allowClear placeholder="Chọn vị trí" options={viTriOptions} filterOption={(input, option) => (option?.label ?? '').toLowerCase().includes(input.toLowerCase())} />
                     </Form.Item>

@@ -154,6 +154,15 @@ const ListVanBanDen = () => {
     });
 
     const columns = [
+        {
+            title: 'Trạng thái xử lý',
+            dataIndex: 'trang_thai_xu_ly',
+            key: 'trang_thai_xu_ly',
+            render: (text) => {
+                let color = text === 'CHO_XU_LY' ? 'warning' : (text === 'DANG_XU_LY' ? 'processing' : 'success');
+                return <Tag color={color}>{text || 'CHO_XU_LY'}</Tag>;
+            }
+        },
         { title: 'Số đến', dataIndex: 'so_den', width: 90 },
         { title: 'Ký hiệu', dataIndex: 'ky_hieu', width: 120 },
         { title: 'Ngày đến', dataIndex: 'ngay_den', render: (text) => text ? dayjs(text).format('DD/MM/YYYY') : '', width: 110 },
