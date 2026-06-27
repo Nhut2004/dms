@@ -43,7 +43,6 @@ app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 app.include_router(auth_routes.router)
 app.include_router(tai_khoan_routes.router)
 app.include_router(co_quan_routes.router)
-# Tạm tắt để server không sập
 app.include_router(danh_muc_routes.router)
 app.include_router(ho_so_routes.router)
 app.include_router(van_ban_di_routes.router)
