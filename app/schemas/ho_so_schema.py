@@ -6,8 +6,8 @@ from datetime import date
 class HoSoCreate(BaseModel):
     ma_ho_so: str
     tieu_de_ho_so: str
-    file_catalog: Optional[int] = None  # Thêm trường này
-    file_notation: Optional[str] = None  # Thêm trường này
+    file_catalog: Optional[int] = None
+    file_notation: Optional[str] = None
     thoi_han_bao_quan: Optional[str] = None
     che_do_su_dung: Optional[str] = None
     ngay_bat_dau: Optional[date] = None
@@ -22,6 +22,8 @@ class HoSoCreate(BaseModel):
 
 class HoSoUpdate(BaseModel):
     tieu_de_ho_so: Optional[str] = None
+    file_catalog: Optional[int] = None
+    file_notation: Optional[str] = None
     thoi_han_bao_quan: Optional[str] = None
     che_do_su_dung: Optional[str] = None
     ngay_bat_dau: Optional[date] = None
@@ -37,6 +39,8 @@ class HoSoUpdate(BaseModel):
 class HoSoResponse(BaseModel):
     ma_ho_so: str
     tieu_de_ho_so: str
+    file_catalog: Optional[int] = None
+    file_notation: Optional[str] = None
     thoi_han_bao_quan: Optional[str] = None
     che_do_su_dung: Optional[str] = None
     ngay_bat_dau: Optional[date] = None

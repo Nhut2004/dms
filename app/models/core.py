@@ -30,9 +30,14 @@ class ViTriLuuTru(Base):
 
 class HoSo(Base):
     __tablename__ = "ho_so"
-    # Đã đổi thành chuỗi theo bản vẽ
     ma_ho_so = Column(String(50), primary_key=True)
     tieu_de_ho_so = Column(String(500), nullable=False)
+
+    # --- THÊM 2 DÒNG NÀY VÀO ---
+    file_catalog = Column(Integer, nullable=True)
+    file_notation = Column(String(50), nullable=True)
+    # ---------------------------
+
     thoi_han_bao_quan = Column(String(50))
     che_do_su_dung = Column(String(50))
     ngay_bat_dau = Column(Date)

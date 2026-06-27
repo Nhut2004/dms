@@ -556,7 +556,8 @@ VALUES
     ('KHAC', 'Quyet dinh khac', NULL);
 
 ALTER TABLE van_ban_di ADD COLUMN so_luong_ban_phat_hanh INTEGER;
-
+ALTER TABLE ho_so ADD COLUMN file_catalog INTEGER;
+ALTER TABLE ho_so ADD COLUMN file_notation VARCHAR(50);
 COMMIT;
 
 -- =====================================================================
