@@ -99,4 +99,16 @@ const Login = () => {
     );
 };
 
+axios.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (error.response && error.response.status === 401) {
+            message.error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại!');
+            localStorage.removeItem('access_token');
+            window.location.href = '/login';
+        }
+        return Promise.reject(error);
+    }
+);
+
 export default Login;

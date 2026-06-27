@@ -147,6 +147,7 @@ def upload_file_van_ban_den(
             status_code=404, detail="Không tìm thấy văn bản để đính kèm!")
 
     saved_files = []
+    file_responses = []
     for file in files:
         # Tạo tên file an toàn: Thêm ID văn bản đằng trước để không bị trùng tên
         file_path = os.path.join(UPLOAD_DIR, f"{van_ban_id}_{file.filename}")
@@ -155,14 +156,12 @@ def upload_file_van_ban_den(
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
 
-        saved_files.append(file.filename)
-
         # Tính toán định dạng và dung lượng
         ext = file.filename.split(
             ".")[-1].lower() if "." in file.filename else None
         file_size = os.path.getsize(file_path)
 
-        # Đổi dấu \ thành / để đường dẫn đồng nhất và không bị lỗi hiển thị trên React
+        # Đổi dấu \\ thành / để đường dẫn đồng nhất và không bị lỗi hiển thị trên React
         normalized_path = file_path.replace("\\", "/")
 
         new_file = FileDinhKem(
@@ -171,9 +170,18 @@ def upload_file_van_ban_den(
             van_ban_id=van_ban_id,
             loai_van_ban="VAN_BAN_DEN",
             dinh_dang=ext,
-            dung_luong=float(file_size / 1024)
+            dung_luong=float(file_size / 1024),
         )
         db.add(new_file)
+        file_responses.append({
+            "id": None,  # sẽ được fill sau commit nếu cần
+            "ten_file": file.filename,
+            "duong_dan": normalized_path,
+            "dinh_dang": ext,
+            "dung_luong": float(file_size / 1024),
+        })
 
     db.commit()
-    return {"message": f"Đã tải lên {len(saved_files)} file thành công!", "files": saved_files}
+    # Refresh để lấy ID cho các file mới tạo
+    db.refresh(db_van_ban)
+    return {"message": f"Đã tải lên {len(file_responses)} file thành công!", "files": file_responses}
