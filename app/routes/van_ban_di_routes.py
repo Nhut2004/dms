@@ -260,13 +260,28 @@ def xoa_van_ban_di(id: int, db: Session = Depends(get_db), nguoi_dung: TaiKhoan 
     return {"message": "Xóa văn bản đi thành công"}
 
 
-@router.get("/", response_model=list[VanBanDiResponse])
+# Bỏ response_model=list[VanBanDiResponse] để trả về cấu trúc mới
+@router.get("/")
 def lay_danh_sach_van_ban_di(
+    page: int = 1,
+    size: int = 10,
+    keyword: str = None,  # Hỗ trợ tìm kiếm từ khóa
     db: Session = Depends(get_db),
-    nguoi_dung: TaiKhoan = Depends(lay_nguoi_dung_hien_tai)  # Đã thêm bảo mật
+    nguoi_dung: TaiKhoan = Depends(lay_nguoi_dung_hien_tai)
 ):
-    """Lấy danh sách toàn bộ văn bản đi (bảo vệ)."""
-    return db.query(VanBanDi).all()
+    query = db.query(VanBanDi)
+
+    # Lọc theo từ khóa nếu có
+    if keyword:
+        query = query.filter(
+            VanBanDi.trich_yeu.contains(keyword) |
+            VanBanDi.so_ky_hieu.contains(keyword)
+        )
+
+    total = query.count()
+    danh_sach = query.offset((page - 1) * size).limit(size).all()
+
+    return {"data": danh_sach, "total": total}
 
 
 @router.put("/{id}/trang-thai")

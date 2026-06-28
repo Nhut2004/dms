@@ -53,9 +53,26 @@ def tao_van_ban_den(
     return van_ban_moi
 
 
-@router.get("/", response_model=list[VanBanDenResponse])
-def lay_danh_sach_van_ban_den(db: Session = Depends(get_db)):
-    return db.query(VanBanDen).all()
+@router.get("/")
+def lay_danh_sach_van_ban_den(
+    page: int = 1,
+    size: int = 10,
+    keyword: str = None,  # Thêm tham số tìm kiếm
+    db: Session = Depends(get_db),
+    nguoi_dung: TaiKhoan = Depends(lay_nguoi_dung_hien_tai)
+):
+    query = db.query(VanBanDen)
+
+    # Nếu có từ khóa, lọc dữ liệu
+    if keyword:
+        query = query.filter(
+            VanBanDen.trich_yeu.contains(keyword) |
+            VanBanDen.ky_hieu.contains(keyword)
+        )
+
+    total = query.count()
+    danh_sach = query.offset((page - 1) * size).limit(size).all()
+    return {"data": danh_sach, "total": total}
 
 
 @router.put("/{van_ban_id}", response_model=VanBanDenResponse)

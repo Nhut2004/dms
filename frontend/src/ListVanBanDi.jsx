@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { PaperClipOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { Table, Button, Space, Input, Modal, Form, DatePicker, InputNumber, Select, message, Popconfirm, Row, Col, Upload, Tooltip, Tag, Card } from 'antd';
+import { Table, Button, Spin, Space, Input, Modal, Form, DatePicker, InputNumber, Select, message, Popconfirm, Row, Col, Upload, Tooltip, Tag, Card } from 'antd';
 const { Search } = Input;
 const BASE_URL = 'http://localhost:8000';
 
@@ -12,21 +12,46 @@ const ListVanBanDi = () => {
     const [loading, setLoading] = useState(false);
     const [searchText, setSearchText] = useState('');
 
+    // 1. State phân trang
+    const [pagination, setPagination] = useState({
+        current: 1,
+        pageSize: 10,
+        total: 0,
+    });
+
     const getAuthHeaders = () => {
         const token = localStorage.getItem('access_token');
         return { Authorization: `Bearer ${token}` };
     };
 
-    const fetchVanBanDi = async () => {
+    // 2. Hàm fetchData mới: Nhận page, size và keyword
+    const fetchVanBanDi = async (page = 1, size = 10, keyword = '') => {
         setLoading(true);
         try {
-            const response = await axios.get(`${BASE_URL}/api/van-ban-di/`, { headers: getAuthHeaders() });
-            setData(response.data || []);
+            const response = await axios.get(`${BASE_URL}/api/van-ban-di/`, {
+                headers: getAuthHeaders(),
+                params: { page, size, keyword }
+            });
+            setData(response.data.data || []);
+            setPagination(prev => ({
+                ...prev,
+                current: page,
+                total: response.data.total
+            }));
         } catch (error) {
             message.error('Không thể tải danh sách văn bản đi.');
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleTableChange = (paginationConfig) => {
+        fetchVanBanDi(paginationConfig.current, paginationConfig.pageSize, searchText);
+    };
+
+    const handleSearch = (value) => {
+        setSearchText(value);
+        fetchVanBanDi(1, pagination.pageSize, value);
     };
 
     const handleDelete = async (id) => {
@@ -54,7 +79,7 @@ const ListVanBanDi = () => {
 
 
     useEffect(() => {
-        fetchVanBanDi();
+        fetchVanBanDi(pagination.current, pagination.pageSize);
     }, []);
 
     const filteredData = data.filter((item) =>
@@ -185,8 +210,7 @@ const ListVanBanDi = () => {
                     <Search
                         placeholder="Tìm theo số ký hiệu, trích yếu..."
                         allowClear
-                        onSearch={(value) => setSearchText(value)}
-                        onChange={(e) => setSearchText(e.target.value)}
+                        onSearch={handleSearch}
                         style={{ width: 300 }}
                     />
                     <Button type="primary" onClick={() => navigate('/them-van-ban')}>Thêm mới</Button>
@@ -196,9 +220,10 @@ const ListVanBanDi = () => {
             <Table
                 rowKey="id"
                 columns={columns}
-                dataSource={filteredData}
+                dataSource={data}
                 loading={loading}
-                pagination={{ pageSize: 8 }}
+                pagination={pagination} // Truyền config phân trang vào
+                onChange={handleTableChange} // Bắt sự kiện đổi trang
                 scroll={{ x: 'max-content' }}
             />
         </Card>

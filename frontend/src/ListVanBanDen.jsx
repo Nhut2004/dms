@@ -14,7 +14,11 @@ const ListVanBanDen = () => {
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [editingRecord, setEditingRecord] = useState(null);
     const [form] = Form.useForm();
-
+    const [pagination, setPagination] = useState({
+        current: 1,
+        pageSize: 10,
+        total: 0,
+    });
     // State mới để chứa File tải lên
     const [fileList, setFileList] = useState([]);
 
@@ -49,13 +53,17 @@ const ListVanBanDen = () => {
         }
     };
 
-    const fetchData = async () => {
+    const fetchData = async (page = 1, size = 10, keyword = searchText) => {
         setLoading(true);
         try {
-            const response = await axios.get(apiUrl, { headers: getAuthHeaders() });
-            setData(Array.isArray(response.data) ? response.data : []);
+            const response = await axios.get(apiUrl, {
+                headers: getAuthHeaders(),
+                params: { page, size, keyword } // Gửi keyword lên Backend
+            });
+            setData(response.data.data || []);
+            setPagination(prev => ({ ...prev, current: page, total: response.data.total }));
         } catch (error) {
-            setData([]);
+            message.error('Lỗi khi tải dữ liệu!');
         } finally {
             setLoading(false);
         }
@@ -63,8 +71,17 @@ const ListVanBanDen = () => {
 
     useEffect(() => {
         fetchOptions();
-        fetchData();
+        fetchData(pagination.current, pagination.pageSize);
     }, []);
+
+    const handleTableChange = (paginationConfig) => {
+        fetchData(paginationConfig.current, paginationConfig.pageSize);
+    };
+
+    const handleSearch = (value) => {
+        setSearchText(value);
+        fetchVanBanDi(1, pagination.pageSize); // Luôn gọi trang 1 khi bắt đầu tìm kiếm mới
+    };
 
     const handleDelete = async (id) => {
         try {
@@ -270,17 +287,26 @@ const ListVanBanDen = () => {
 
     return (
         <div style={{ padding: '24px', background: '#fff', borderRadius: '8px' }}>
+            {/* 👈 ĐÂY LÀ CHỖ THIẾU NÚT THÊM MỚI */}
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
-                <Input placeholder="Tìm kiếm theo Số đến, Ký hiệu, Trích yếu..." prefix={<SearchOutlined />} value={searchText} onChange={(e) => setSearchText(e.target.value)} style={{ width: 400 }} />
-                <Button type="primary" icon={<PlusOutlined />} onClick={showCreateModal}>Thêm mới</Button>
+                <Input.Search
+                    placeholder="Tìm kiếm..."
+                    onSearch={(value) => fetchData(1, pagination.pageSize, value)}
+                    onChange={(e) => setSearchText(e.target.value)}
+                    style={{ width: 400 }}
+                />
+                <Button type="primary" icon={<PlusOutlined />} onClick={showCreateModal}>
+                    Thêm mới
+                </Button>
             </div>
 
             <Table
                 columns={columns}
-                dataSource={filteredData}
+                dataSource={data}
                 rowKey="id"
                 loading={loading}
-                pagination={{ pageSize: 10 }}
+                pagination={pagination}
+                onChange={handleTableChange}
                 scroll={{ x: 'max-content' }}
                 size="middle"
             />

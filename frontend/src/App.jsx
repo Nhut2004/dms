@@ -7,7 +7,7 @@ import ListVanBanDi from './ListVanBanDi';
 // 1. Thêm import component ListVanBanDen vừa tạo
 import ListVanBanDen from './ListVanBanDen';
 import ListHoSo from './ListHoSo';
-
+import Dashboard from './Dashboard';
 const ProtectedRoute = ({ children }) => {
   const token = localStorage.getItem('access_token');
   if (!token) {
@@ -30,21 +30,17 @@ const App = () => {
             </ProtectedRoute>
           }
         >
-          <Route index element={
-            <div style={{ padding: 24, fontSize: 18 }}>
-              Chào mừng bạn đến với Hệ thống Quản lý tài liệu điện tử!
-            </div>
-          } />
+          {/* ĐÃ SỬA: Xóa chữ Chào mừng, đặt Dashboard làm trang mặc định (index) */}
+          <Route index element={<Dashboard />} />
+          <Route path="dashboard" element={<Dashboard />} />
 
-          {/* Luồng Văn bản đi */}
           <Route path="van-ban-di" element={<ListVanBanDi />} />
           <Route path="them-van-ban" element={<CreateVanBanDi />} />
           <Route path="sua-van-ban/:id" element={<CreateVanBanDi />} />
           <Route path="ho-so" element={<ListHoSo />} />
+
           {/* Luồng Văn bản đến */}
           <Route path="van-ban-den" element={<ListVanBanDen />} />
-          {/* <Route path="them-van-ban-den" element={<CreateVanBanDen />} /> */}
-          {/* <Route path="sua-van-ban-den/:id" element={<CreateVanBanDen />} /> */}
         </Route>
       </Routes>
     </BrowserRouter>
