@@ -39,6 +39,20 @@ const ListVanBanDi = () => {
         }
     };
 
+    const handleUpdateStatus = async (id, newStatus) => {
+        try {
+            await axios.put(`${BASE_URL}/api/van-ban-di/${id}/trang-thai`,
+                { trang_thai: newStatus },
+                { headers: getAuthHeaders() }
+            );
+            message.success('Cập nhật trạng thái thành công!');
+            fetchVanBanDi();
+        } catch (error) {
+            message.error('Lỗi khi cập nhật trạng thái!');
+        }
+    };
+
+
     useEffect(() => {
         fetchVanBanDi();
     }, []);
@@ -111,13 +125,53 @@ const ListVanBanDi = () => {
         {
             title: 'Hành động',
             key: 'action',
-            width: 180,
+            width: 250, // Nới rộng ra một chút để chứa các nút
             render: (_, record) => (
-                <Space size="middle">
-                    <Button type="link" onClick={() => navigate(`/sua-van-ban/${record.id}`)}>Xem/Sửa</Button>
-                    <Popconfirm title="Xóa văn bản đi" description="Bạn có chắc chắn muốn xóa văn bản này không?" onConfirm={() => handleDelete(record.id)} okText="Có, xóa đi" cancelText="Hủy">
-                        <Button type="link" danger>Xóa</Button>
-                    </Popconfirm>
+                <Space size="middle" wrap>
+                    {/* LUỒNG NGHIỆP VỤ: Ẩn/Hiện nút theo Trạng thái */}
+
+                    {/* 1. Nếu là DRAFT -> Hiện nút Trình duyệt */}
+                    {(!record.trang_thai || record.trang_thai === 'DRAFT') && (
+                        <Button type="primary" size="small" onClick={() => handleUpdateStatus(record.id, 'PENDING_APPROVAL')}>
+                            Trình duyệt
+                        </Button>
+                    )}
+
+                    {/* 2. Nếu là PENDING_APPROVAL -> Hiện nút Phê duyệt / Từ chối */}
+                    {record.trang_thai === 'PENDING_APPROVAL' && (
+                        <>
+                            <Button type="primary" size="small" style={{ backgroundColor: '#1890ff' }} onClick={() => handleUpdateStatus(record.id, 'APPROVED')}>
+                                Phê duyệt
+                            </Button>
+                            <Button type="default" danger size="small" onClick={() => handleUpdateStatus(record.id, 'DRAFT')}>
+                                Từ chối
+                            </Button>
+                        </>
+                    )}
+
+                    {/* 3. Nếu là APPROVED -> Hiện nút Phát hành */}
+                    {record.trang_thai === 'APPROVED' && (
+                        <Button type="primary" size="small" style={{ backgroundColor: '#52c41a' }} onClick={() => handleUpdateStatus(record.id, 'PUBLISHED')}>
+                            Phát hành
+                        </Button>
+                    )}
+
+                    {/* 4. Nếu là PUBLISHED -> Hiện nút Thu hồi */}
+                    {record.trang_thai === 'PUBLISHED' && (
+                        <Popconfirm title="Lý do thu hồi..." description="Bạn có chắc chắn muốn thu hồi văn bản này?" onConfirm={() => handleUpdateStatus(record.id, 'REVOKED')}>
+                            <Button type="primary" danger size="small">Thu hồi</Button>
+                        </Popconfirm>
+                    )}
+
+                    {/* NÚT CƠ BẢN (XEM/SỬA/XÓA) */}
+                    <Button type="link" size="small" onClick={() => navigate(`/sua-van-ban/${record.id}`)}>Xem</Button>
+
+                    {/* Chỉ cho xóa khi còn là Bản nháp */}
+                    {(!record.trang_thai || record.trang_thai === 'DRAFT') && (
+                        <Popconfirm title="Xóa văn bản đi" onConfirm={() => handleDelete(record.id)}>
+                            <Button type="link" danger size="small">Xóa</Button>
+                        </Popconfirm>
+                    )}
                 </Space>
             )
         }

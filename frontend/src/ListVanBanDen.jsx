@@ -158,40 +158,56 @@ const ListVanBanDen = () => {
             title: 'Trạng thái xử lý',
             dataIndex: 'trang_thai_xu_ly',
             key: 'trang_thai_xu_ly',
+            width: 150,
             render: (text) => {
                 let color = text === 'CHO_XU_LY' ? 'warning' : (text === 'DANG_XU_LY' ? 'processing' : 'success');
                 return <Tag color={color}>{text || 'CHO_XU_LY'}</Tag>;
             }
         },
         { title: 'Số đến', dataIndex: 'so_den', width: 90 },
-        { title: 'Ký hiệu', dataIndex: 'ky_hieu', width: 120 },
+        { title: 'Ký hiệu', dataIndex: 'ky_hieu', width: 130 },
         { title: 'Ngày đến', dataIndex: 'ngay_den', render: (text) => text ? dayjs(text).format('DD/MM/YYYY') : '', width: 110 },
         {
             title: 'Cơ quan ban hành',
             dataIndex: 'co_quan_ban_hanh_id',
-            render: (id) => coQuanOptions.find(opt => opt.value === id)?.label || 'Chưa xác định',
-            width: 200
+            width: 220,
+            ellipsis: true,
+            render: (id) => {
+                const tenCoQuan = coQuanOptions.find(opt => opt.value === id)?.label || 'Chưa xác định';
+                return (
+                    <Tooltip title={tenCoQuan} placement="topLeft" color="blue">
+                        <span>{tenCoQuan}</span>
+                    </Tooltip>
+                );
+            }
         },
-        { title: 'Trích yếu', dataIndex: 'trich_yeu', ellipsis: true },
-        // CỘT HIỂN THỊ FILE ĐÍNH KÈM
+        {
+            title: 'Trích yếu',
+            dataIndex: 'trich_yeu',
+            width: 280,
+            ellipsis: true,
+            render: (text) => (
+                <Tooltip title={text} placement="topLeft" color="blue">
+                    <span style={{ cursor: 'pointer' }}>{text || '--'}</span>
+                </Tooltip>
+            )
+        },
         {
             title: 'Tệp đính kèm',
             key: 'tep_dinh_kems',
-            width: 250, // Độ rộng cố định cho cột
+            width: 220,
             render: (_, record) => {
                 const files = record.tep_dinh_kems || [];
                 if (!files.length) return <span style={{ color: '#bfbfbf' }}>Không có file</span>;
 
                 return (
-                    // Đổi Space thành div flex column để mỗi file nằm 1 dòng cho gọn
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                         {files.map((file, i) => {
-                            // Xử lý đường dẫn file (Nếu đang ở file Văn bản đi thì dùng logic URL của bạn)
                             const normalizedPath = file.duong_dan.replaceAll('\\', '/');
                             const fileUrl = normalizedPath.startsWith('/') ? `${BASE_URL}${normalizedPath}` : `${BASE_URL}/${normalizedPath}`;
 
                             return (
-                                /* Bọc bằng Tooltip để khi di chuột vào hiện full tên */
                                 <Tooltip title={file.ten_file} key={file.id || i} placement="topLeft">
                                     <a
                                         href={fileUrl}
@@ -199,10 +215,10 @@ const ListVanBanDen = () => {
                                         rel="noreferrer"
                                         style={{
                                             display: 'block',
-                                            maxWidth: '220px',      // Giới hạn chiều dài tối đa
-                                            whiteSpace: 'nowrap',   // Ép không cho rớt dòng
-                                            overflow: 'hidden',     // Phần thừa ra sẽ bị giấu đi
-                                            textOverflow: 'ellipsis'// Thêm dấu 3 chấm (...) ở cuối
+                                            maxWidth: '200px',
+                                            whiteSpace: 'nowrap',
+                                            overflow: 'hidden',
+                                            textOverflow: 'ellipsis'
                                         }}
                                     >
                                         <PaperClipOutlined style={{ marginRight: '4px' }} />
@@ -224,14 +240,14 @@ const ListVanBanDen = () => {
 
                 const deadline = dayjs(text);
                 const today = dayjs().startOf('day');
-                const diffDays = deadline.diff(today, 'day'); // Tính số ngày còn lại
+                const diffDays = deadline.diff(today, 'day');
 
                 const formattedDate = deadline.format('DD/MM/YYYY');
 
                 if (diffDays < 0) {
                     return <Tag color="error">Quá hạn ({formattedDate})</Tag>;
                 } else if (diffDays <= 3) {
-                    return <Tag color="warning">Sắp hết hạn ({formattedDate})</Tag>;
+                    return <Tag color="warning">Sắp hết ({formattedDate})</Tag>;
                 } else {
                     return <Tag color="success">Còn hạn ({formattedDate})</Tag>;
                 }
@@ -259,7 +275,15 @@ const ListVanBanDen = () => {
                 <Button type="primary" icon={<PlusOutlined />} onClick={showCreateModal}>Thêm mới</Button>
             </div>
 
-            <Table columns={columns} dataSource={filteredData} rowKey="id" loading={loading} pagination={{ pageSize: 10 }} scroll={{ x: 1200 }} />
+            <Table
+                columns={columns}
+                dataSource={filteredData}
+                rowKey="id"
+                loading={loading}
+                pagination={{ pageSize: 10 }}
+                scroll={{ x: 'max-content' }}
+                size="middle"
+            />
 
             <Modal title={editingRecord ? "Cập nhật Văn bản đến" : "Thêm mới Văn bản đến"} open={isModalVisible} onCancel={() => setIsModalVisible(false)} onOk={() => form.submit()} okText="Lưu" cancelText="Hủy" width={850}>
                 <Form form={form} layout="vertical" onFinish={handleSubmit}>

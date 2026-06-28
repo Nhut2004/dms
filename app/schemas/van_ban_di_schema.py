@@ -57,5 +57,9 @@ class VanBanDiResponse(BaseModel):
     tep_dinh_kems: Optional[List[FileDinhKemResponse]] = None
     so_luong_ban_phat_hanh: Optional[int] = None
 
+
+class TrangThaiUpdate(BaseModel):
+    trang_thai: str
+
     class Config:
         from_attributes = True
