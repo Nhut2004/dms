@@ -137,7 +137,15 @@ const ListVanBanDen = () => {
             setFileList([]); // Quét sạch file list để chuẩn bị cho lần tạo mới tiếp theo
             fetchData();
         } catch (error) {
-            message.error('Lỗi khi lưu văn bản!');
+            // Trích xuất thông báo lỗi chi tiết (detail) mà Backend gửi về
+            const errorMessage = error.response?.data?.detail || 'Lỗi hệ thống khi lưu văn bản!';
+
+            // Có thể FastAPI trả về mảng lỗi (Validation Error)
+            if (Array.isArray(errorMessage)) {
+                message.error(`Dữ liệu không hợp lệ: ${errorMessage[0].msg}`);
+            } else {
+                message.error(errorMessage);
+            }
         }
     };
 

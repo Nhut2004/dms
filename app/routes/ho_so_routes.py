@@ -6,6 +6,9 @@ from app.schemas.ho_so_schema import HoSoCreate, HoSoUpdate, HoSoResponse
 from app.dependencies import lay_nguoi_dung_hien_tai
 from config.database import get_db
 from sqlalchemy import or_
+from app.models.document import VanBanDen, VanBanDi
+from app.schemas.van_ban_den_schema import VanBanDenResponse
+from app.schemas.van_ban_di_schema import VanBanDiResponse
 router = APIRouter(
     prefix="/api/ho-so",
     tags=["Quản lý Hồ sơ"]
@@ -122,3 +125,28 @@ def dong_ho_so(
     ho_so.trang_thai = "DA_DONG"
     db.commit()
     return {"message": "Đã đóng hồ sơ thành công!"}
+
+
+@router.get("/{ma_ho_so}/van-ban")
+def lay_van_ban_trong_ho_so(
+    ma_ho_so: str,
+    db: Session = Depends(get_db),
+    nguoi_dung: TaiKhoan = Depends(lay_nguoi_dung_hien_tai)
+):
+    # Kiểm tra xem hồ sơ có tồn tại không
+    ho_so = db.query(HoSo).filter(HoSo.ma_ho_so == ma_ho_so).first()
+    if not ho_so:
+        raise HTTPException(status_code=404, detail="Không tìm thấy hồ sơ!")
+
+    # Query Văn bản đến
+    ds_vb_den = db.query(VanBanDen).filter(
+        VanBanDen.ma_ho_so == ma_ho_so).order_by(VanBanDen.so_den).all()
+
+    # Query Văn bản đi
+    ds_vb_di = db.query(VanBanDi).filter(
+        VanBanDi.ma_ho_so == ma_ho_so).order_by(VanBanDi.id.desc()).all()
+
+    return {
+        "van_ban_den": ds_vb_den,
+        "van_ban_di": ds_vb_di
+    }

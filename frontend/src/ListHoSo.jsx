@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Tag, Table, Button, Space, Modal, Form, Input, DatePicker, InputNumber, Select, message, Popconfirm } from 'antd';
+import { Tag, Tabs, Table, Button, Space, Modal, Form, Input, DatePicker, InputNumber, Select, message, Popconfirm, Tooltip } from 'antd';
 import axios from 'axios';
 import dayjs from 'dayjs';
-
+import { EyeOutlined, EditOutlined, LockOutlined, DeleteOutlined } from '@ant-design/icons';
 const API_URL = 'http://localhost:8000/api/ho-so/';
 const BASE_URL = 'http://localhost:8000';
 
@@ -19,6 +19,13 @@ const ListHoSo = () => {
     const [form] = Form.useForm();
     const [searchText, setSearchText] = useState('');
     const [viTriOptions, setViTriOptions] = useState([]);
+
+    // State cho Modal chi tiết văn bản
+    const [isDetailModalVisible, setIsDetailModalVisible] = useState(false);
+    const [currentHoSo, setCurrentHoSo] = useState(null);
+    const [vbDenData, setVbDenData] = useState([]);
+    const [vbDiData, setVbDiData] = useState([]);
+    const [modalLoading, setModalLoading] = useState(false);
 
     // 1. Khởi tạo State phân trang
     const [pagination, setPagination] = useState({
@@ -92,6 +99,27 @@ const ListHoSo = () => {
         }
     };
 
+
+    const handleViewDetails = async (record) => {
+        setCurrentHoSo(record);
+        setIsDetailModalVisible(true);
+        setModalLoading(true);
+        setVbDenData([]);
+        setVbDiData([]);
+
+        try {
+            const response = await axios.get(`${BASE_URL}/api/ho-so/${record.ma_ho_so}/van-ban`, {
+                headers: getAuthHeaders()
+            });
+            setVbDenData(response.data.van_ban_den);
+            setVbDiData(response.data.van_ban_di);
+        } catch (error) {
+            message.error("Lỗi tải danh sách văn bản thuộc hồ sơ");
+        } finally {
+            setModalLoading(false);
+        }
+    };
+
     const handleEdit = (record) => {
         setEditingItem(record);
         form.setFieldsValue({
@@ -145,35 +173,199 @@ const ListHoSo = () => {
             title: 'Trạng thái',
             dataIndex: 'trang_thai',
             key: 'trang_thai',
+            align: 'center',
+            width: 120,
             render: (text) => {
-                let color = text === 'DANG_MO' ? 'green' : (text === 'DA_DONG' ? 'orange' : 'default');
-                return <Tag color={color}>{text || 'DANG_MO'}</Tag>;
+                let color = text === 'DANG_MO' ? 'green' : (text === 'DA_DONG' ? 'red' : 'default');
+                let label = text === 'DANG_MO' ? 'Đang mở' : (text === 'DA_DONG' ? 'Đã đóng' : text);
+                return <Tag color={color}>{label || 'Đang mở'}</Tag>;
             }
         },
-        { title: 'Mã hồ sơ', dataIndex: 'ma_ho_so', key: 'ma_ho_so' },
-        { title: 'Tiêu đề hồ sơ', dataIndex: 'tieu_de_ho_so', key: 'tieu_de_ho_so' },
-        { title: 'Thời hạn bảo quản', dataIndex: 'thoi_han_bao_quan', key: 'thoi_han_bao_quan' },
-        { title: 'Chế độ sử dụng', dataIndex: 'che_do_su_dung', key: 'che_do_su_dung' },
-        { title: 'Ngày bắt đầu', dataIndex: 'ngay_bat_dau', key: 'ngay_bat_dau' },
-        { title: 'Ngày kết thúc', dataIndex: 'ngay_ket_thuc', key: 'ngay_ket_thuc' },
+        {
+            title: 'Mã hồ sơ',
+            dataIndex: 'ma_ho_so',
+            key: 'ma_ho_so',
+            width: 140,
+            render: (text) => <strong style={{ color: '#1677ff' }}>{text}</strong>
+        },
+        {
+            title: 'Tiêu đề hồ sơ',
+            dataIndex: 'tieu_de_ho_so',
+            key: 'tieu_de_ho_so',
+            ellipsis: true,
+            render: (text) => (
+                <Tooltip title={text} placement="topLeft" color="blue">
+                    <span style={{ cursor: 'pointer' }}>{text}</span>
+                </Tooltip>
+            )
+        },
+        {
+            title: 'Chế độ sử dụng',
+            dataIndex: 'che_do_su_dung',
+            key: 'che_do_su_dung',
+            align: 'center',
+            width: 140,
+            render: (text) => {
+                if (!text) return '---';
+                let color = 'default';
+                if (text === 'Mở') color = 'success';
+                if (text === 'Hạn chế') color = 'warning';
+                if (text === 'Mật') color = 'error';
+                return <Tag color={color}>{text}</Tag>;
+            }
+        },
+        {
+            title: 'Ngày bắt đầu',
+            dataIndex: 'ngay_bat_dau',
+            key: 'ngay_bat_dau',
+            align: 'center',
+            width: 130,
+            render: (text) => text ? dayjs(text).format('DD/MM/YYYY') : '---'
+        },
+        {
+            title: 'Ngày kết thúc',
+            dataIndex: 'ngay_ket_thuc',
+            key: 'ngay_ket_thuc',
+            align: 'center',
+            width: 130,
+            render: (text) => text ? dayjs(text).format('DD/MM/YYYY') : '---'
+        },
         {
             title: 'Hành động',
             key: 'action',
+            align: 'center',
+            width: 220, // Tăng width đủ rộng để chứa 4 khối nút
             render: (_, record) => (
-                <Space size="middle">
-                    <Button type="link" onClick={() => handleEdit(record)}>Sửa</Button>
+                // Dùng whiteSpace: 'nowrap' để ép các nút luôn nằm trên 1 hàng ngang
+                <Space size="small" style={{ whiteSpace: 'nowrap' }}>
+                    <Tooltip title="Xem văn bản">
+                        <Button type="primary" icon={<EyeOutlined />} onClick={() => handleViewDetails(record)} />
+                    </Tooltip>
 
-                    {/* CHỈ HIỆN NÚT ĐÓNG KHI ĐANG MỞ */}
+                    <Tooltip title="Sửa hồ sơ">
+                        <Button type="primary" style={{ backgroundColor: '#52c41a' }} icon={<EditOutlined />} onClick={() => handleEdit(record)} />
+                    </Tooltip>
+
                     {record.trang_thai === 'DANG_MO' && (
-                        <Popconfirm title="Bạn có chắc muốn đóng hồ sơ này?" onConfirm={() => handleDongHoSo(record.ma_ho_so)}>
-                            <Button type="link" style={{ color: 'orange' }}>Đóng</Button>
-                        </Popconfirm>
+                        <Tooltip title="Đóng hồ sơ">
+                            <Popconfirm title="Bạn có chắc muốn đóng hồ sơ này?" onConfirm={() => handleDongHoSo(record.ma_ho_so)}>
+                                <Button type="primary" style={{ backgroundColor: '#faad14' }} icon={<LockOutlined />} />
+                            </Popconfirm>
+                        </Tooltip>
                     )}
 
-                    <Popconfirm title="Chắc chắn xóa hồ sơ này?" onConfirm={() => handleDelete(record.ma_ho_so)}>
-                        <Button type="link" danger>Xóa</Button>
-                    </Popconfirm>
+                    <Tooltip title="Xóa hồ sơ">
+                        <Popconfirm title="Chắc chắn xóa hồ sơ này?" onConfirm={() => handleDelete(record.ma_ho_so)}>
+                            <Button type="primary" danger icon={<DeleteOutlined />} />
+                        </Popconfirm>
+                    </Tooltip>
                 </Space>
+            ),
+        },
+    ];
+
+    const vbDenColumns = [
+        {
+            title: 'Số đến',
+            dataIndex: 'so_den',
+            key: 'so_den',
+            width: 80,
+            align: 'center',
+            render: (text) => <strong>{text}</strong>
+        },
+        {
+            title: 'Ký hiệu',
+            dataIndex: 'ky_hieu',
+            key: 'ky_hieu',
+            width: 140,
+            align: 'center',
+            render: (text) => <Tag color="blue">{text || '---'}</Tag>
+        },
+        {
+            title: 'Trích yếu',
+            dataIndex: 'trich_yeu',
+            key: 'trich_yeu',
+            ellipsis: true,
+            render: (text) => (
+                <Tooltip title={text} placement="topLeft" color="blue">
+                    <span style={{ cursor: 'pointer' }}>{text}</span>
+                </Tooltip>
+            )
+        },
+        {
+            title: 'Ngày đến',
+            dataIndex: 'ngay_den',
+            key: 'ngay_den',
+            width: 120,
+            align: 'center',
+            render: (text) => text ? dayjs(text).format('DD/MM/YYYY') : '---'
+        },
+    ];
+
+    const vbDiColumns = [
+        {
+            title: 'Số ký hiệu',
+            dataIndex: 'so_ky_hieu',
+            key: 'so_ky_hieu',
+            width: 150,
+            align: 'center',
+            render: (text) => <Tag color="green">{text || '---'}</Tag>
+        },
+        {
+            title: 'Trích yếu',
+            dataIndex: 'trich_yeu',
+            key: 'trich_yeu',
+            ellipsis: true,
+            render: (text) => (
+                <Tooltip title={text} placement="topLeft" color="green">
+                    <span style={{ cursor: 'pointer' }}>{text}</span>
+                </Tooltip>
+            )
+        },
+        {
+            title: 'Ngày ban hành',
+            dataIndex: 'ngay_ban_hanh',
+            key: 'ngay_ban_hanh',
+            width: 130,
+            align: 'center',
+            render: (text) => text ? dayjs(text).format('DD/MM/YYYY') : '---'
+        },
+    ];
+
+    // Cấu hình Tabs có thêm viền (bordered) và thanh cuộn dọc (scroll y)
+    const tabItems = [
+        {
+            key: '1',
+            label: `Văn bản đến (${vbDenData.length})`,
+            children: (
+                <Table
+                    columns={vbDenColumns}
+                    dataSource={vbDenData}
+                    rowKey="id"
+                    pagination={false}
+                    size="small"
+                    bordered
+                    scroll={{ y: 300 }}
+                    loading={modalLoading}
+                    locale={{ emptyText: 'Hồ sơ chưa có văn bản đến nào' }}
+                />
+            ),
+        },
+        {
+            key: '2',
+            label: `Văn bản đi (${vbDiData.length})`,
+            children: (
+                <Table
+                    columns={vbDiColumns}
+                    dataSource={vbDiData}
+                    rowKey="id"
+                    pagination={false}
+                    size="small"
+                    bordered
+                    scroll={{ y: 300 }}
+                    loading={modalLoading}
+                    locale={{ emptyText: 'Hồ sơ chưa có văn bản đi nào' }}
+                />
             ),
         },
     ];
@@ -197,6 +389,8 @@ const ListHoSo = () => {
                 loading={loading}
                 pagination={pagination}
                 onChange={handleTableChange}
+                bordered
+                scroll={{ x: 'max-content' }}
             />
 
             <Modal title={editingItem ? "Chỉnh sửa Hồ sơ" : "Tạo mới Hồ sơ"} open={isModalVisible} onCancel={() => setIsModalVisible(false)} onOk={() => form.submit()} width={700}>
@@ -245,6 +439,19 @@ const ListHoSo = () => {
                     <Form.Item name="ngon_ngu" label="Ngôn ngữ"><Input /></Form.Item>
                     <Form.Item name="ghi_chu" label="Ghi chú"><Input.TextArea rows={3} /></Form.Item>
                 </Form>
+            </Modal>
+            <Modal
+                title={`Chi tiết văn bản thuộc Hồ sơ: ${currentHoSo?.ma_ho_so || ''}`}
+                open={isDetailModalVisible}
+                onCancel={() => setIsDetailModalVisible(false)}
+                footer={null}
+                width={1000}
+                destroyOnClose
+            >
+                <div style={{ marginBottom: 16 }}>
+                    <strong>Tiêu đề: </strong> {currentHoSo?.tieu_de_ho_so}
+                </div>
+                <Tabs defaultActiveKey="1" items={tabItems} />
             </Modal>
         </div>
     );

@@ -164,8 +164,8 @@ async def cap_nhat_van_ban_di(
     if not van_ban:
         raise HTTPException(
             status_code=404, detail="Không tìm thấy văn bản đi")
+    ma_ho_so_moi = ma_ho_so if ma_ho_so is not None else van_ban.ma_ho_so
 
-    ma_ho_so_moi = van_ban.ma_ho_so if van_ban.ma_ho_so is not None else db.ma_ho_so
     if ma_ho_so_moi:
         ho_so = db.query(HoSo).filter(HoSo.ma_ho_so == ma_ho_so_moi).first()
         if ho_so and ho_so.trang_thai == "DA_DONG":
@@ -173,7 +173,6 @@ async def cap_nhat_van_ban_di(
                 status_code=400,
                 detail=f"Hồ sơ {ma_ho_so_moi} đã đóng, không thể đưa văn bản vào đây!"
             )
-
     # --- BLOCK VALIDATE NGHIỆP VỤ KHI CẬP NHẬT ---
     ngay_ban_hanh_check = ngay_ban_hanh if ngay_ban_hanh else van_ban.ngay_ban_hanh
     han_tra_loi_check = han_tra_loi if han_tra_loi else van_ban.han_tra_loi
