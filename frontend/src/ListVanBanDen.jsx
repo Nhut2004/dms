@@ -43,7 +43,8 @@ const ListVanBanDen = () => {
             ]);
             setCoQuanOptions((coQuanRes.data || []).map(item => ({ label: item.ten_co_quan, value: item.id })));
             setDanhMucOptions((danhMucRes.data || []).map(item => ({ label: item.ten_loai_vb, value: item.id })));
-            setHoSoOptions((hoSoRes.data || []).map(item => ({ label: item.ma_ho_so, value: item.ma_ho_so })));
+            const hoSoArray = Array.isArray(hoSoRes.data) ? hoSoRes.data : (hoSoRes.data?.data || []);
+            setHoSoOptions(hoSoArray.map(item => ({ label: item.ma_ho_so, value: item.ma_ho_so })));
             setCanBoOptions((canBoRes.data || []).map(item => ({
                 label: `${item.ho_ten} ${item.chuc_vu ? `(${item.chuc_vu})` : ''}`,
                 value: item.id

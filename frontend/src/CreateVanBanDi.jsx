@@ -69,8 +69,10 @@ const CreateVanBanDi = () => {
                     }))
                 );
 
+                const hoSoArray = Array.isArray(hoSoRes.data) ? hoSoRes.data : (hoSoRes.data?.data || []);
+
                 setHoSoOptions(
-                    (hoSoRes.data || []).map((item) => ({
+                    hoSoArray.map((item) => ({
                         label: item.ma_ho_so,
                         value: item.ma_ho_so
                     }))

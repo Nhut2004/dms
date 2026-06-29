@@ -5,7 +5,7 @@ from app.models.auth import TaiKhoan
 from app.schemas.ho_so_schema import HoSoCreate, HoSoUpdate, HoSoResponse
 from app.dependencies import lay_nguoi_dung_hien_tai
 from config.database import get_db
-
+from sqlalchemy import or_
 router = APIRouter(
     prefix="/api/ho-so",
     tags=["Quản lý Hồ sơ"]
@@ -29,12 +29,36 @@ def tao_ho_so(
     return ho_so_moi
 
 
-@router.get("/", response_model=list[HoSoResponse])
+@router.get("/")
 def lay_danh_sach_ho_so(
+    page: int = 1,
+    size: int = 10,
+    keyword: str = None,
     db: Session = Depends(get_db),
     nguoi_dung: TaiKhoan = Depends(lay_nguoi_dung_hien_tai)
 ):
-    return db.query(HoSo).all()
+    query = db.query(HoSo)
+
+    # 1. Logic tìm kiếm theo keyword (Mã hồ sơ hoặc Tiêu đề)
+    if keyword:
+        query = query.filter(
+            or_(
+                HoSo.ma_ho_so.ilike(f"%{keyword}%"),
+                HoSo.tieu_de_ho_so.ilike(f"%{keyword}%")
+            )
+        )
+
+    # 2. Đếm tổng số bản ghi (phục vụ phân trang UI)
+    total = query.count()
+
+    # 3. Áp dụng phân trang
+    danh_sach = query.offset((page - 1) * size).limit(size).all()
+
+    # 4. Trả về đúng cấu trúc chuẩn của hệ thống
+    return {
+        "data": danh_sach,
+        "total": total
+    }
 
 
 @router.get("/{ma_ho_so}", response_model=HoSoResponse)
@@ -83,3 +107,18 @@ def xoa_ho_so(
     db.delete(ho_so)
     db.commit()
     return {"detail": "Xóa hồ sơ thành công!"}
+
+
+@router.patch("/{ma_ho_so}/dong")
+def dong_ho_so(
+    ma_ho_so: str,
+    db: Session = Depends(get_db),
+    nguoi_dung: TaiKhoan = Depends(lay_nguoi_dung_hien_tai)
+):
+    ho_so = db.query(HoSo).filter(HoSo.ma_ho_so == ma_ho_so).first()
+    if not ho_so:
+        raise HTTPException(status_code=404, detail="Không tìm thấy hồ sơ")
+
+    ho_so.trang_thai = "DA_DONG"
+    db.commit()
+    return {"message": "Đã đóng hồ sơ thành công!"}

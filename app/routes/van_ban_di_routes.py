@@ -5,7 +5,7 @@ from sqlalchemy import func
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from sqlalchemy.orm import Session
 from config.database import get_db
-
+from app.models.core import HoSo
 from app.models.document import FileDinhKem, VanBanDi, VanBanDen
 from app.schemas.van_ban_di_schema import VanBanDiCreate, VanBanDiResponse
 from app.dependencies import lay_nguoi_dung_hien_tai
@@ -39,6 +39,15 @@ async def tao_van_ban_di(
     db: Session = Depends(get_db),
     nguoi_dung: TaiKhoan = Depends(lay_nguoi_dung_hien_tai)
 ):
+
+    if ma_ho_so:
+        ho_so = db.query(HoSo).filter(HoSo.ma_ho_so == ma_ho_so).first()
+        if ho_so and ho_so.trang_thai == "DA_DONG":
+            raise HTTPException(
+                status_code=400,
+                detail=f"Hồ sơ {ma_ho_so} đã đóng, không thể thêm văn bản mới vào hồ sơ này!"
+            )
+
     # --- BLOCK VALIDATE NGHIỆP VỤ ---
     if han_tra_loi and ngay_ban_hanh:
         if han_tra_loi < ngay_ban_hanh:
@@ -155,6 +164,15 @@ async def cap_nhat_van_ban_di(
     if not van_ban:
         raise HTTPException(
             status_code=404, detail="Không tìm thấy văn bản đi")
+
+    ma_ho_so_moi = van_ban.ma_ho_so if van_ban.ma_ho_so is not None else db.ma_ho_so
+    if ma_ho_so_moi:
+        ho_so = db.query(HoSo).filter(HoSo.ma_ho_so == ma_ho_so_moi).first()
+        if ho_so and ho_so.trang_thai == "DA_DONG":
+            raise HTTPException(
+                status_code=400,
+                detail=f"Hồ sơ {ma_ho_so_moi} đã đóng, không thể đưa văn bản vào đây!"
+            )
 
     # --- BLOCK VALIDATE NGHIỆP VỤ KHI CẬP NHẬT ---
     ngay_ban_hanh_check = ngay_ban_hanh if ngay_ban_hanh else van_ban.ngay_ban_hanh

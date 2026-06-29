@@ -1,13 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from config.database import get_db
-
+from sqlalchemy import func, or_
 from app.models.document import VanBanDen
 from app.schemas.van_ban_den_schema import VanBanDenCreate, VanBanDenUpdate, VanBanDenResponse
 from app.dependencies import lay_nguoi_dung_hien_tai
 from app.models.auth import TaiKhoan
 from app.models.document import VanBanDen, FileDinhKem
-
+from app.models.core import HoSo
 import os
 import shutil
 from fastapi import UploadFile, File
@@ -25,13 +25,26 @@ def tao_van_ban_den(
     db: Session = Depends(get_db),
     nguoi_dung: TaiKhoan = Depends(lay_nguoi_dung_hien_tai)
 ):
+    # 1. Guard: Chặn hồ sơ đã đóng (Giữ nguyên)
+    if van_ban.ma_ho_so:
+        ho_so = db.query(HoSo).filter(
+            HoSo.ma_ho_so == van_ban.ma_ho_so).first()
+        if ho_so and ho_so.trang_thai == "DA_DONG":
+            raise HTTPException(
+                status_code=400,
+                detail=f"Hồ sơ {van_ban.ma_ho_so} đã đóng, không thể thêm văn bản!"
+            )
+
+    # 2. XỬ LÝ SỐ ĐẾN THÔNG MINH (Thay thế đoạn raise HTTPException cũ)
     kiem_tra = db.query(VanBanDen).filter(
         VanBanDen.so_den == van_ban.so_den).first()
     if kiem_tra:
-        raise HTTPException(
-            status_code=400, detail="Số đến đã tồn tại trong hệ thống!")
+        # Nếu số người dùng nhập đã bị trùng, hệ thống tự động tìm số lớn nhất và cộng 1
+        max_so_den = db.query(func.max(VanBanDen.so_den)).scalar() or 0
+        van_ban.so_den = max_so_den + 1
+        # (Không báo lỗi 400 cản trở người dùng nữa)
 
-    # --- BLOCK VALIDATE NGHIỆP VỤ ---
+    # --- BLOCK VALIDATE NGHIỆP VỤ (Giữ nguyên phần Ngày tháng, Số trang...) ---
     if van_ban.han_giai_quyet and van_ban.ngay_den:
         if van_ban.han_giai_quyet < van_ban.ngay_den:
             raise HTTPException(
@@ -86,6 +99,15 @@ def cap_nhat_van_ban_den(
     if not db_van_ban:
         raise HTTPException(
             status_code=404, detail="Không tìm thấy văn bản đến này!")
+
+    ma_ho_so_moi = van_ban_update.ma_ho_so if van_ban_update.ma_ho_so is not None else db_van_ban.ma_ho_so
+    if ma_ho_so_moi:
+        ho_so = db.query(HoSo).filter(HoSo.ma_ho_so == ma_ho_so_moi).first()
+        if ho_so and ho_so.trang_thai == "DA_DONG":
+            raise HTTPException(
+                status_code=400,
+                detail=f"Hồ sơ {ma_ho_so_moi} đã đóng, không thể đưa văn bản vào đây!"
+            )
 
     # --- BLOCK VALIDATE NGHIỆP VỤ KHI CẬP NHẬT ---
     ngay_den_check = van_ban_update.ngay_den if van_ban_update.ngay_den else db_van_ban.ngay_den

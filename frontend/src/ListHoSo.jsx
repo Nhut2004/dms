@@ -20,11 +20,28 @@ const ListHoSo = () => {
     const [searchText, setSearchText] = useState('');
     const [viTriOptions, setViTriOptions] = useState([]);
 
-    const fetchData = async () => {
+    // 1. Khởi tạo State phân trang
+    const [pagination, setPagination] = useState({
+        current: 1,
+        pageSize: 10,
+        total: 0,
+    });
+
+    // 2. Cập nhật hàm fetchData để truyền tham số page, size, keyword
+    const fetchData = async (page = 1, size = 10, keyword = '') => {
         setLoading(true);
         try {
-            const response = await axios.get(API_URL, { headers: getAuthHeaders() });
-            setData(response.data);
+            const response = await axios.get(API_URL, {
+                headers: getAuthHeaders(),
+                params: { page, size, keyword }
+            });
+            setData(response.data.data || []);
+            setPagination(prev => ({
+                ...prev,
+                current: page,
+                pageSize: size,
+                total: response.data.total
+            }));
         } catch (error) {
             message.error('Lỗi khi tải danh sách hồ sơ!');
         } finally {
@@ -34,8 +51,6 @@ const ListHoSo = () => {
 
     const fetchOptions = async () => {
         try {
-            // Lưu ý: Đảm bảo bạn đã có API này ở Backend. 
-            // Nếu chưa có, bạn có thể tạm bỏ đoạn fetch này để tránh lỗi console
             const res = await axios.get(`${BASE_URL}/api/danh-muc-vi-tri/`, { headers: getAuthHeaders() });
             setViTriOptions(res.data.map(item => ({ label: item.ten_vi_tri, value: item.id })));
         } catch (error) {
@@ -43,15 +58,38 @@ const ListHoSo = () => {
         }
     };
 
+    // 3. Gọi fetch dữ liệu trang 1 khi load
     useEffect(() => {
-        fetchData();
+        fetchData(pagination.current, pagination.pageSize);
         fetchOptions();
     }, []);
+
+    // 4. Xử lý chuyển trang trên Table
+    const handleTableChange = (paginationConfig) => {
+        fetchData(paginationConfig.current, paginationConfig.pageSize, searchText);
+    };
+
+    // 5. Xử lý tìm kiếm
+    const handleSearch = (value) => {
+        setSearchText(value);
+        fetchData(1, pagination.pageSize, value); // Đưa về trang 1 khi có từ khóa mới
+    };
 
     const handleAdd = () => {
         setEditingItem(null);
         form.resetFields();
         setIsModalVisible(true);
+    };
+
+    const handleDongHoSo = async (ma_ho_so) => {
+        try {
+            await axios.patch(`${BASE_URL}/api/ho-so/${ma_ho_so}/dong`, {}, { headers: getAuthHeaders() });
+            message.success('Đã đóng hồ sơ thành công!');
+            // Tải lại dữ liệu sau khi đóng thành công
+            fetchData(pagination.current, pagination.pageSize, searchText);
+        } catch (error) {
+            message.error('Lỗi khi đóng hồ sơ!');
+        }
     };
 
     const handleEdit = (record) => {
@@ -68,7 +106,7 @@ const ListHoSo = () => {
         try {
             await axios.delete(`${API_URL}${ma_ho_so}`, { headers: getAuthHeaders() });
             message.success('Xóa hồ sơ thành công!');
-            fetchData();
+            fetchData(1, pagination.pageSize, searchText); // Tải lại dữ liệu sau khi xóa
         } catch (error) {
             message.error(error.response?.data?.detail || 'Lỗi khi xóa hồ sơ!');
         }
@@ -90,9 +128,15 @@ const ListHoSo = () => {
                 message.success('Tạo hồ sơ thành công!');
             }
             setIsModalVisible(false);
-            fetchData();
+            fetchData(pagination.current, pagination.pageSize, searchText); // Tải lại dữ liệu
         } catch (error) {
-            message.error(error.response?.data?.detail || 'Lỗi thao tác!');
+            const errorMsg = error?.response?.data?.detail || 'Lỗi hệ thống khi lưu văn bản!';
+
+            if (Array.isArray(errorMsg)) {
+                message.error(`Dữ liệu không hợp lệ: ${errorMsg[0].msg}`);
+            } else {
+                message.error(errorMsg);
+            }
         }
     };
 
@@ -106,7 +150,7 @@ const ListHoSo = () => {
                 return <Tag color={color}>{text || 'DANG_MO'}</Tag>;
             }
         },
-        { title: 'Mã hồ sơ', dataIndex: 'ma_ho_so', key: 'ma_ho_so', filteredValue: [searchText], onFilter: (value, record) => record.ma_ho_so.toLowerCase().includes(value.toLowerCase()) || record.tieu_de_ho_so.toLowerCase().includes(value.toLowerCase()) },
+        { title: 'Mã hồ sơ', dataIndex: 'ma_ho_so', key: 'ma_ho_so' },
         { title: 'Tiêu đề hồ sơ', dataIndex: 'tieu_de_ho_so', key: 'tieu_de_ho_so' },
         { title: 'Thời hạn bảo quản', dataIndex: 'thoi_han_bao_quan', key: 'thoi_han_bao_quan' },
         { title: 'Chế độ sử dụng', dataIndex: 'che_do_su_dung', key: 'che_do_su_dung' },
@@ -118,6 +162,14 @@ const ListHoSo = () => {
             render: (_, record) => (
                 <Space size="middle">
                     <Button type="link" onClick={() => handleEdit(record)}>Sửa</Button>
+
+                    {/* CHỈ HIỆN NÚT ĐÓNG KHI ĐANG MỞ */}
+                    {record.trang_thai === 'DANG_MO' && (
+                        <Popconfirm title="Bạn có chắc muốn đóng hồ sơ này?" onConfirm={() => handleDongHoSo(record.ma_ho_so)}>
+                            <Button type="link" style={{ color: 'orange' }}>Đóng</Button>
+                        </Popconfirm>
+                    )}
+
                     <Popconfirm title="Chắc chắn xóa hồ sơ này?" onConfirm={() => handleDelete(record.ma_ho_so)}>
                         <Button type="link" danger>Xóa</Button>
                     </Popconfirm>
@@ -129,11 +181,23 @@ const ListHoSo = () => {
     return (
         <div>
             <Space style={{ marginBottom: 16 }}>
-                <Input.Search placeholder="Tìm kiếm Mã/Tiêu đề..." onChange={e => setSearchText(e.target.value)} style={{ width: 300 }} />
+                <Input.Search
+                    placeholder="Tìm kiếm Mã/Tiêu đề..."
+                    onSearch={handleSearch}
+                    onChange={e => setSearchText(e.target.value)}
+                    style={{ width: 300 }}
+                />
                 <Button type="primary" onClick={handleAdd}>Thêm mới Hồ sơ</Button>
             </Space>
 
-            <Table columns={columns} dataSource={data} rowKey="ma_ho_so" loading={loading} />
+            <Table
+                columns={columns}
+                dataSource={data}
+                rowKey="ma_ho_so"
+                loading={loading}
+                pagination={pagination}
+                onChange={handleTableChange}
+            />
 
             <Modal title={editingItem ? "Chỉnh sửa Hồ sơ" : "Tạo mới Hồ sơ"} open={isModalVisible} onCancel={() => setIsModalVisible(false)} onOk={() => form.submit()} width={700}>
                 <Form form={form} layout="vertical" onFinish={handleSubmit}>

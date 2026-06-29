@@ -1,6 +1,6 @@
+import random
 from datetime import date, timedelta
 from config.database import SessionLocal
-# Đã import thêm ViTriLuuTru vào đây
 from app.models.core import CoQuanToChuc, DanhMucLoaiVb, HoSo, ViTriLuuTru
 from app.models.auth import CanBo
 from app.models.document import VanBanDen, VanBanDi
@@ -10,105 +10,141 @@ def seed_data():
     db = SessionLocal()
 
     try:
-        print("⏳ Đang kiểm tra và tạo dữ liệu nền tảng (Danh mục, Cơ quan, Cán bộ, Vị trí, Hồ sơ)...")
+        print("⏳ Đang kiểm tra và tạo dữ liệu nền tảng đa dạng (Danh mục, Cơ quan, Cán bộ, Hồ sơ)...")
 
-        # 1. Tạo Cơ quan (nếu chưa có)
-        co_quan = db.query(CoQuanToChuc).first()
-        if not co_quan:
-            co_quan = CoQuanToChuc(
-                ten_co_quan="UBND Thành phố Cần Thơ", organ_id="UBND-CT", dia_chi="Cần Thơ")
-            db.add(co_quan)
+        # 1. Tạo nhiều Cơ quan (để test dropdown)
+        co_quans = db.query(CoQuanToChuc).all()
+        if not co_quans:
+            ds_co_quan = [
+                ("UBND Thành phố Cần Thơ", "UBND-CT", "Cần Thơ"),
+                ("Sở Thông tin và Truyền thông", "STTTT-CT", "Số 2, Cần Thơ"),
+                ("Sở Y tế", "SYT-CT", "Số 3, Cần Thơ"),
+                ("Sở Giáo dục và Đào tạo", "SGDDT-CT", "Số 4, Cần Thơ"),
+                ("Sở Kế hoạch và Đầu tư", "SKHDT-CT", "Số 5, Cần Thơ")
+            ]
+            for ten, ma, dc in ds_co_quan:
+                db.add(CoQuanToChuc(ten_co_quan=ten, organ_id=ma, dia_chi=dc))
             db.commit()
-            db.refresh(co_quan)
+            co_quans = db.query(CoQuanToChuc).all()
 
-        # 2. Tạo Loại văn bản (nếu chưa có)
-        loai_vb = db.query(DanhMucLoaiVb).first()
-        if not loai_vb:
-            loai_vb = DanhMucLoaiVb(
-                ten_loai_vb="Quyết định", mo_ta="Quyết định hành chính")
-            db.add(loai_vb)
+        # 2. Tạo nhiều Loại văn bản
+        loai_vbs = db.query(DanhMucLoaiVb).all()
+        if not loai_vbs:
+            ds_loai_vb = ["Quyết định", "Thông báo", "Công văn",
+                          "Tờ trình", "Báo cáo", "Chỉ thị", "Kế hoạch"]
+            for ten in ds_loai_vb:
+                db.add(DanhMucLoaiVb(ten_loai_vb=ten,
+                       mo_ta=f"Mô tả cho {ten}"))
             db.commit()
-            db.refresh(loai_vb)
+            loai_vbs = db.query(DanhMucLoaiVb).all()
 
-        # 3. Tạo Cán bộ (nếu chưa có)
-        can_bo = db.query(CanBo).first()
-        if not can_bo:
-            can_bo = CanBo(ho_ten="Trần Thị B",
-                           chuc_vu="Giám đốc Sở", co_quan_id=co_quan.id)
-            db.add(can_bo)
+        # 3. Tạo nhiều Cán bộ
+        can_bos = db.query(CanBo).all()
+        if not can_bos:
+            ds_can_bo = [
+                ("Nguyễn Văn Lãnh Đạo", "Chủ tịch", co_quans[0].id),
+                ("Trần Thị Giám Đốc", "Giám đốc Sở", co_quans[1].id),
+                ("Lê Văn Trưởng Phòng", "Trưởng phòng", co_quans[2].id),
+                ("Phạm Thị Phó Giám Đốc", "Phó Giám đốc", co_quans[3].id),
+                ("Hoàng Văn Chuyên Viên", "Chuyên viên", co_quans[4].id)
+            ]
+            for ten, chuc_vu, cq_id in ds_can_bo:
+                db.add(CanBo(ho_ten=ten, chuc_vu=chuc_vu, co_quan_id=cq_id))
             db.commit()
-            db.refresh(can_bo)
+            can_bos = db.query(CanBo).all()
 
-        # 4. TẠO VỊ TRÍ LƯU TRỮ (MỚI THÊM)
-        vi_tri = db.query(ViTriLuuTru).first()
-        if not vi_tri:
-            vi_tri_1 = ViTriLuuTru(toa_nha="A", phong="101", ke_tu="01",
-                                   ngan_tang="1", so_hop="H01", ghi_chu="Hồ sơ năm 2026")
-            vi_tri_2 = ViTriLuuTru(toa_nha="B", phong="202", ke_tu="03",
-                                   ngan_tang="2", so_hop="H15", ghi_chu="Hồ sơ mật")
-            db.add_all([vi_tri_1, vi_tri_2])
+        # 4. Tạo nhiều Vị trí lưu trữ
+        vi_tris = db.query(ViTriLuuTru).all()
+        if not vi_tris:
+            for i in range(1, 4):
+                db.add(ViTriLuuTru(
+                    toa_nha="Tòa A", phong=f"10{i}", ke_tu=f"0{i}", ngan_tang="1", so_hop=f"H{i}"))
             db.commit()
-            db.refresh(vi_tri_1)
-            vi_tri = vi_tri_1  # Gán vị trí 1 để dùng cho Hồ sơ mẫu
+            vi_tris = db.query(ViTriLuuTru).all()
 
-        # 5. Tạo Hồ sơ lưu trữ (Đã liên kết Vị trí lưu trữ)
-        ho_so = db.query(HoSo).first()
-        if not ho_so:
-            ho_so = HoSo(
-                ma_ho_so="HS-2026-001",
-                tieu_de_ho_so="Hồ sơ dự án CNTT năm 2026",
-                vi_tri_id=vi_tri.id  # Gắn vị trí lưu trữ vào đây
-            )
-            db.add(ho_so)
+        # 5. Tạo nhiều Hồ sơ lưu trữ với các trạng thái khác nhau
+        ho_sos = db.query(HoSo).all()
+        if not ho_sos:
+            ds_ho_so = [
+                ("HS-2026-001", "Hồ sơ dự án CNTT năm 2026", "DANG_MO"),
+                ("HS-2026-002", "Hồ sơ mua sắm thiết bị y tế", "DANG_MO"),
+                ("HS-2025-099", "Hồ sơ thanh tra giáo dục 2025", "DA_DONG"),
+                ("HS-2026-005", "Hồ sơ quy hoạch đô thị", "DANG_MO"),
+                ("HS-2024-001", "Hồ sơ khen thưởng 2024", "DA_DONG")
+            ]
+            for ma, tieu_de, tt in ds_ho_so:
+                db.add(HoSo(ma_ho_so=ma, tieu_de_ho_so=tieu_de,
+                       vi_tri_id=random.choice(vi_tris).id, trang_thai=tt))
             db.commit()
-            db.refresh(ho_so)
+            ho_sos = db.query(HoSo).all()
 
-        print("⏳ Đang tạo 5 dữ liệu mẫu cho Văn bản đến...")
+        # 6. Tạo 20 dòng Văn bản đến (Random dữ liệu)
+        print("⏳ Đang tạo 20 dữ liệu mẫu cho Văn bản đến...")
         if db.query(VanBanDen).count() == 0:
-            for i in range(1, 6):
+            trang_thais_den = ["CHO_XU_LY", "DANG_XU_LY", "DA_XU_LY"]
+            for i in range(1, 21):
+                cq = random.choice(co_quans)
+                lvb = random.choice(loai_vbs)
+                hs = random.choice(ho_sos)
+
                 vb_den = VanBanDen(
                     so_den=i,
-                    ky_hieu=f"{i:03d}/QĐ-UBND",
-                    ngay_den=date.today() - timedelta(days=i),
-                    ngay_ban_hanh=date.today() - timedelta(days=i+2),
-                    co_quan_ban_hanh_id=co_quan.id,
-                    ma_loai_vb_id=loai_vb.id,
-                    trich_yeu=f"Quyết định phê duyệt dự án nâng cấp hạ tầng số {i}",
+                    ky_hieu=f"{i:03d}/{lvb.ten_loai_vb[:2].upper()}-{cq.organ_id.split('-')[0]}",
+                    ngay_den=date.today() - timedelta(days=random.randint(1, 30)),
+                    ngay_ban_hanh=date.today() - timedelta(days=random.randint(31, 60)),
+                    co_quan_ban_hanh_id=cq.id,
+                    ma_loai_vb_id=lvb.id,
+                    trich_yeu=f"Văn bản số {i} về việc chỉ đạo, điều hành công tác tháng {random.randint(1, 12)}/2026",
                     ngon_ngu="Tiếng Việt",
-                    so_trang=5 + i,
-                    ho_ten_nguoi_ky="Nguyễn Văn A",
-                    chuc_vu_nguoi_ky="Chủ tịch",
-                    linh_vuc="Công nghệ thông tin",
-                    do_khan=1 if i % 2 == 0 else 2,
+                    so_trang=random.randint(1, 15),
+                    ho_ten_nguoi_ky=f"Người ký {i}",
+                    chuc_vu_nguoi_ky=random.choice(
+                        ["Chủ tịch", "Giám đốc", "Phó Giám đốc", "Trưởng phòng"]),
+                    linh_vuc=random.choice(
+                        ["Hành chính", "CNTT", "Y tế", "Giáo dục", "Tài chính"]),
+                    do_khan=random.randint(1, 4),
                     don_vi_nhan="Phòng Hành chính, Phòng IT",
-                    han_giai_quyet=date.today() + timedelta(days=10 - i),
-                    ma_ho_so=ho_so.ma_ho_so
+                    han_giai_quyet=date.today() + timedelta(days=random.randint(5, 20)),
+                    ma_ho_so=hs.ma_ho_so,
+                    # Random trạng thái để vẽ biểu đồ
+                    trang_thai_xu_ly=random.choice(trang_thais_den)
                 )
                 db.add(vb_den)
 
-        print("⏳ Đang tạo 5 dữ liệu mẫu cho Văn bản đi...")
+        # 7. Tạo 20 dòng Văn bản đi (Random dữ liệu)
+        print("⏳ Đang tạo 20 dữ liệu mẫu cho Văn bản đi...")
         if db.query(VanBanDi).count() == 0:
-            for i in range(1, 6):
+            trang_thais_di = [
+                "DRAFT", "PENDING_APPROVAL", "PUBLISHED", "REVOKED"]
+            for i in range(1, 21):
+                cq = random.choice(co_quans)
+                lvb = random.choice(loai_vbs)
+                cb = random.choice(can_bos)
+                hs = random.choice(ho_sos)
+
                 vb_di = VanBanDi(
                     so_ky_hieu=f"VB/{date.today().year}/{i:03d}",
-                    ngay_ban_hanh=date.today(),
-                    trich_yeu=f"Thông báo triển khai kế hoạch bảo mật hệ thống giai đoạn {i}",
-                    don_vi_soan_thao_id=co_quan.id,
-                    ma_loai_vb_id=loai_vb.id,
+                    ngay_ban_hanh=date.today() - timedelta(days=random.randint(0, 20)),
+                    trich_yeu=f"{lvb.ten_loai_vb} số {i} về hoạt động chuyên môn của {cq.ten_co_quan}",
+                    don_vi_soan_thao_id=cq.id,
+                    ma_loai_vb_id=lvb.id,
                     ngon_ngu="Tiếng Việt",
-                    so_trang=2 + i,
-                    nguoi_ky_id=can_bo.id,
-                    chuc_vu_nguoi_ky=can_bo.chuc_vu,
-                    noi_nhan="Các phòng ban trực thuộc",
-                    muc_do_khan=3 if i == 5 else 1,
-                    han_tra_loi=date.today() + timedelta(days=15),
-                    so_luong_ban_phat_hanh=10 * i,
-                    ma_ho_so=ho_so.ma_ho_so
+                    so_trang=random.randint(1, 20),
+                    nguoi_ky_id=cb.id,
+                    chuc_vu_nguoi_ky=cb.chuc_vu,
+                    noi_nhan=random.choice(
+                        ["Các phòng ban", "Sở ban ngành", "UBND cấp huyện"]),
+                    muc_do_khan=random.randint(1, 5),
+                    han_tra_loi=date.today() + timedelta(days=random.randint(10, 30)),
+                    so_luong_ban_phat_hanh=random.randint(5, 50),
+                    ma_ho_so=hs.ma_ho_so,
+                    trang_thai=random.choice(
+                        trang_thais_di)  # Random trạng thái
                 )
                 db.add(vb_di)
 
         db.commit()
-        print("✅ THÀNH CÔNG! Đã bơm dữ liệu xong. Mở trình duyệt lên test thôi!")
+        print("✅ THÀNH CÔNG! Đã bơm dữ liệu 20 dòng siêu đa dạng. Mở trình duyệt lên test thôi!")
 
     except Exception as e:
         db.rollback()
