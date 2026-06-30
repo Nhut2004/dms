@@ -20,6 +20,8 @@ class VanBanDen(Base):
     so_trang = Column(Integer)
     trang_thai_xu_ly = Column(String(50), default="CHO_XU_LY")
     ho_ten_nguoi_ky = Column(String(50))
+    nguoi_xu_ly_id = Column(Integer, ForeignKey(
+        "can_bo.id", ondelete="SET NULL"))
     chuc_vu_nguoi_ky = Column(String(100))
     linh_vuc = Column(Text)
     do_khan = Column(Integer)

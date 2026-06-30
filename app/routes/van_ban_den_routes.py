@@ -5,14 +5,14 @@ from sqlalchemy import func, or_
 from app.models.document import VanBanDen
 from app.schemas.van_ban_den_schema import VanBanDenCreate, VanBanDenUpdate, VanBanDenResponse
 from app.dependencies import lay_nguoi_dung_hien_tai
-from app.models.auth import TaiKhoan
+from app.models.auth import TaiKhoan, CanBo
 from app.models.document import VanBanDen, FileDinhKem
 from app.models.core import HoSo
 import os
 import shutil
 from fastapi import UploadFile, File
 from typing import List
-
+from pydantic import BaseModel
 router = APIRouter(
     prefix="/api/van-ban-den",
     tags=["Quản lý Văn bản đến"]
@@ -224,3 +224,57 @@ def upload_file_van_ban_den(
     # Refresh để lấy ID cho các file mới tạo
     db.refresh(db_van_ban)
     return {"message": f"Đã tải lên {len(file_responses)} file thành công!", "files": file_responses}
+
+# --- BLOCK API PHÂN PHỐI VÀ XỬ LÝ VĂN BẢN ĐẾN ---
+
+
+class PhanPhoiInput(BaseModel):
+    nguoi_xu_ly_id: int
+
+
+class TienDoInput(BaseModel):
+    trang_thai_xu_ly: str
+
+
+@router.patch("/{id}/phan-phoi")
+def phan_phoi_van_ban_den(
+    id: int,
+    data: PhanPhoiInput,
+    db: Session = Depends(get_db),
+    nguoi_dung: TaiKhoan = Depends(lay_nguoi_dung_hien_tai)
+):
+    van_ban = db.query(VanBanDen).filter(VanBanDen.id == id).first()
+    if not van_ban:
+        raise HTTPException(
+            status_code=404, detail="Không tìm thấy văn bản đến!")
+
+    can_bo = db.query(CanBo).filter(CanBo.id == data.nguoi_xu_ly_id).first()
+    if not can_bo:
+        raise HTTPException(
+            status_code=400, detail="Cán bộ xử lý không tồn tại!")
+
+    van_ban.nguoi_xu_ly_id = data.nguoi_xu_ly_id
+    van_ban.trang_thai_xu_ly = 'DANG_XU_LY'
+    db.commit()
+    db.refresh(van_ban)
+
+    return {"message": f"Đã phân phối văn bản cho {can_bo.ho_ten} thành công!"}
+
+
+@router.patch("/{id}/tien-do")
+def cap_nhat_tien_do_van_ban(
+    id: int,
+    data: TienDoInput,
+    db: Session = Depends(get_db),
+    nguoi_dung: TaiKhoan = Depends(lay_nguoi_dung_hien_tai)
+):
+    van_ban = db.query(VanBanDen).filter(VanBanDen.id == id).first()
+    if not van_ban:
+        raise HTTPException(
+            status_code=404, detail="Không tìm thấy văn bản đến!")
+
+    van_ban.trang_thai_xu_ly = data.trang_thai_xu_ly
+    db.commit()
+    db.refresh(van_ban)
+
+    return {"message": "Cập nhật tiến độ xử lý thành công!"}

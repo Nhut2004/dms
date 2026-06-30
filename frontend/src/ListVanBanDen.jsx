@@ -1,7 +1,7 @@
+import axios from 'axios';
 import React, { useState, useEffect } from 'react';
 import { Table, Button, Space, Input, Modal, Form, DatePicker, InputNumber, Select, message, Popconfirm, Row, Col, Upload, Tooltip, Tag } from 'antd';
-import { EditOutlined, DeleteOutlined, PlusOutlined, SearchOutlined, InboxOutlined, PaperClipOutlined } from '@ant-design/icons';
-import axios from 'axios';
+import { EditOutlined, DeleteOutlined, PlusOutlined, SearchOutlined, InboxOutlined, PaperClipOutlined, UserAddOutlined, CheckCircleOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 
 const { Dragger } = Upload;
@@ -21,7 +21,11 @@ const ListVanBanDen = () => {
     });
     // State mới để chứa File tải lên
     const [fileList, setFileList] = useState([]);
-
+    // State cho Modal Phân phối
+    const [isPhanPhoiModalVisible, setIsPhanPhoiModalVisible] = useState(false);
+    const [phanPhoiRecord, setPhanPhoiRecord] = useState(null);
+    const [formPhanPhoi] = Form.useForm();
+    //
     const [coQuanOptions, setCoQuanOptions] = useState([]);
     const [danhMucOptions, setDanhMucOptions] = useState([]);
     const [hoSoOptions, setHoSoOptions] = useState([]);
@@ -34,24 +38,30 @@ const ListVanBanDen = () => {
     };
 
     const fetchOptions = async () => {
+        // Tách riêng từng API để nếu 1 cái lỗi (VD: chưa code xong Backend), các dropdown khác vẫn có dữ liệu bình thường
         try {
-            const [coQuanRes, danhMucRes, hoSoRes, canBoRes] = await Promise.all([
-                axios.get(`${BASE_URL}/api/co-quan/`, { headers: getAuthHeaders() }),
-                axios.get(`${BASE_URL}/api/danh-muc/`, { headers: getAuthHeaders() }),
-                axios.get(`${BASE_URL}/api/ho-so/`, { headers: getAuthHeaders() }),
-                axios.get(`${BASE_URL}/api/can-bo/`, { headers: getAuthHeaders() })
-            ]);
+            const coQuanRes = await axios.get(`${BASE_URL}/api/co-quan/`, { headers: getAuthHeaders() });
             setCoQuanOptions((coQuanRes.data || []).map(item => ({ label: item.ten_co_quan, value: item.id })));
+        } catch (e) { console.warn("Lỗi tải Cơ quan:", e.message); }
+
+        try {
+            const danhMucRes = await axios.get(`${BASE_URL}/api/danh-muc/`, { headers: getAuthHeaders() });
             setDanhMucOptions((danhMucRes.data || []).map(item => ({ label: item.ten_loai_vb, value: item.id })));
+        } catch (e) { console.warn("Lỗi tải Danh mục:", e.message); }
+
+        try {
+            const hoSoRes = await axios.get(`${BASE_URL}/api/ho-so/`, { headers: getAuthHeaders() });
             const hoSoArray = Array.isArray(hoSoRes.data) ? hoSoRes.data : (hoSoRes.data?.data || []);
             setHoSoOptions(hoSoArray.map(item => ({ label: item.ma_ho_so, value: item.ma_ho_so })));
+        } catch (e) { console.warn("Lỗi tải Hồ sơ:", e.message); }
+
+        try {
+            const canBoRes = await axios.get(`${BASE_URL}/api/can-bo/`, { headers: getAuthHeaders() });
             setCanBoOptions((canBoRes.data || []).map(item => ({
                 label: `${item.ho_ten} ${item.chuc_vu ? `(${item.chuc_vu})` : ''}`,
                 value: item.id
             })));
-        } catch (error) {
-            console.error('Lỗi tải danh mục');
-        }
+        } catch (e) { console.warn("Lỗi tải Cán bộ:", e.message); }
     };
 
     const fetchData = async (page = 1, size = 10, keyword = searchText) => {
@@ -81,7 +91,33 @@ const ListVanBanDen = () => {
 
     const handleSearch = (value) => {
         setSearchText(value);
-        fetchVanBanDi(1, pagination.pageSize); // Luôn gọi trang 1 khi bắt đầu tìm kiếm mới
+        fetchData(1, pagination.pageSize, value); // Đã sửa tên hàm và truyền thêm value
+    };
+
+    const handlePhanPhoi = async (values) => {
+        try {
+            await axios.patch(`${BASE_URL}/api/van-ban-den/${phanPhoiRecord.id}/phan-phoi`, values, {
+                headers: getAuthHeaders()
+            });
+            message.success("Phân phối văn bản thành công!");
+            setIsPhanPhoiModalVisible(false);
+            formPhanPhoi.resetFields();
+            fetchData(pagination.current, pagination.pageSize, searchText); // Gọi đúng hàm fetchData
+        } catch (error) {
+            message.error(error.response?.data?.detail || "Lỗi khi phân phối!");
+        }
+    };
+
+    const handleHoanThanh = async (record) => {
+        try {
+            await axios.patch(`${BASE_URL}/api/van-ban-den/${record.id}/tien-do`,
+                { trang_thai_xu_ly: 'DA_XU_LY' },
+                { headers: getAuthHeaders() });
+            message.success("Đã đánh dấu xử lý xong!");
+            fetchData(pagination.current, pagination.pageSize, searchText);
+        } catch (error) {
+            message.error(error.response?.data?.detail || "Lỗi cập nhật tiến độ!");
+        }
     };
 
     const handleDelete = async (id) => {
@@ -190,6 +226,22 @@ const ListVanBanDen = () => {
                 return <Tag color={color}>{text || 'CHO_XU_LY'}</Tag>;
             }
         },
+        {
+            title: 'Người xử lý',
+            dataIndex: 'nguoi_xu_ly_id',
+            key: 'nguoi_xu_ly_id',
+            width: 150,
+            render: (id) => {
+                if (!id) return <span style={{ color: '#bfbfbf' }}>Chưa phân phối</span>;
+                // Tìm tên cán bộ từ danh sách Options đã load từ API
+                const canBo = canBoOptions.find(opt => opt.value === id);
+                return (
+                    <Tag color="blue" icon={<UserAddOutlined />}>
+                        {canBo ? canBo.label : `ID: ${id}`}
+                    </Tag>
+                );
+            }
+        },
         { title: 'Số đến', dataIndex: 'so_den', width: 90 },
         { title: 'Ký hiệu', dataIndex: 'ky_hieu', width: 130 },
         { title: 'Ngày đến', dataIndex: 'ngay_den', render: (text) => text ? dayjs(text).format('DD/MM/YYYY') : '', width: 110 },
@@ -282,13 +334,52 @@ const ListVanBanDen = () => {
         {
             title: 'Hành động',
             key: 'action',
-            width: 120,
+            align: 'center',
+            width: 180, // Tăng width để chứa đủ 3 nút
             render: (_, record) => (
-                <Space size="middle">
-                    <Button type="primary" icon={<EditOutlined />} onClick={() => showEditModal(record)} />
-                    <Popconfirm title="Bạn có chắc muốn xóa?" onConfirm={() => handleDelete(record.id)}>
-                        <Button type="primary" danger icon={<DeleteOutlined />} />
-                    </Popconfirm>
+                <Space size="small" style={{ whiteSpace: 'nowrap' }}>
+                    {/* Nút Phân phối - Chỉ hiện khi CHO_XU_LY */}
+                    {record.trang_thai_xu_ly === 'CHO_XU_LY' && (
+                        <Tooltip title="Phân phối xử lý">
+                            <Button
+                                type="primary"
+                                style={{ backgroundColor: '#722ed1' }} // Màu tím khối vuông
+                                icon={<UserAddOutlined />}
+                                onClick={() => {
+                                    setPhanPhoiRecord(record);
+                                    setIsPhanPhoiModalVisible(true);
+                                }}
+                            />
+                        </Tooltip>
+                    )}
+
+                    {/* Nút Hoàn thành - Chỉ hiện khi DANG_XU_LY */}
+                    {record.trang_thai_xu_ly === 'DANG_XU_LY' && (
+                        <Tooltip title="Xác nhận hoàn thành">
+                            <Popconfirm
+                                title="Xác nhận đã xử lý xong văn bản này?"
+                                onConfirm={() => handleHoanThanh(record)}
+                                okText="Đồng ý"
+                                cancelText="Hủy"
+                            >
+                                <Button
+                                    type="primary"
+                                    style={{ backgroundColor: '#52c41a' }} // Màu xanh lá khối vuông
+                                    icon={<CheckCircleOutlined />}
+                                />
+                            </Popconfirm>
+                        </Tooltip>
+                    )}
+
+                    <Tooltip title="Sửa">
+                        <Button type="primary" icon={<EditOutlined />} onClick={() => showEditModal(record)} />
+                    </Tooltip>
+
+                    <Tooltip title="Xóa">
+                        <Popconfirm title="Bạn có chắc muốn xóa?" onConfirm={() => handleDelete(record.id)}>
+                            <Button type="primary" danger icon={<DeleteOutlined />} />
+                        </Popconfirm>
+                    </Tooltip>
                 </Space>
             ),
         },
@@ -296,7 +387,6 @@ const ListVanBanDen = () => {
 
     return (
         <div style={{ padding: '24px', background: '#fff', borderRadius: '8px' }}>
-            {/* 👈 ĐÂY LÀ CHỖ THIẾU NÚT THÊM MỚI */}
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
                 <Input.Search
                     placeholder="Tìm kiếm..."
@@ -407,6 +497,35 @@ const ListVanBanDen = () => {
                             </Dragger>
                         </Col>
                     </Row>
+                </Form>
+            </Modal>
+            <Modal
+                title={`Phân phối Văn bản đến (ID: ${phanPhoiRecord?.id || ''})`}
+                open={isPhanPhoiModalVisible}
+                onCancel={() => {
+                    setIsPhanPhoiModalVisible(false);
+                    formPhanPhoi.resetFields();
+                }}
+                onOk={() => formPhanPhoi.submit()}
+                okText="Phân phối"
+                cancelText="Hủy"
+                width={500}
+            >
+                <Form form={formPhanPhoi} layout="vertical" onFinish={handlePhanPhoi}>
+                    <Form.Item
+                        name="nguoi_xu_ly_id"
+                        label="Chọn Cán bộ xử lý"
+                        rules={[{ required: true, message: 'Vui lòng chọn cán bộ!' }]}
+                    >
+                        <Select
+                            placeholder="Chọn cán bộ..."
+                            options={canBoOptions}
+                            showSearch
+                            filterOption={(input, option) =>
+                                (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                            }
+                        />
+                    </Form.Item>
                 </Form>
             </Modal>
         </div>

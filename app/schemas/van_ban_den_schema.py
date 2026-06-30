@@ -64,6 +64,7 @@ class FileDinhKemResponse(BaseModel):
 
 class VanBanDenResponse(VanBanDenBase):
     id: int
+    nguoi_xu_ly_id: Optional[int] = None
     tep_dinh_kems: List[TepDinhKemResponse] = []
 
     class Config:
