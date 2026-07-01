@@ -1,0 +1,16 @@
+# Môi trường ảo
+venv/
+env/
+
+# .\venv\Scripts\activate
+
+# File cấu hình bảo mật
+.env
+
+# File cache của Python
+__pycache__/
+*.pyc
+
+# Bỏ qua các file người dùng tải lên test
+uploads/
+node_modules
