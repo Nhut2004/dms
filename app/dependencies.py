@@ -38,7 +38,7 @@ def lay_nguoi_dung_hien_tai(token: str = Depends(oauth2_scheme), db: Session = D
 
     return user
 
-# Phân quyền truy cập
+# Thêm phân quyền truy cập cho hệ thống
 def kiem_tra_quyen_lanh_dao(
     nguoi_dung: TaiKhoan = Depends(lay_nguoi_dung_hien_tai), 
     db: Session = Depends(get_db)

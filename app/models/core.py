@@ -51,6 +51,7 @@ class HoSo(Base):
     vi_tri_id = Column(Integer, ForeignKey(
         "vi_tri_luu_tru.id", ondelete="SET NULL"))
 
+# Thêm bảng để lưu trữ nhật ký và thời gian
 class NhatKyHeThong(Base):
     __tablename__ = "nhat_ky_he_thong"
     id = Column(Integer, primary_key=True, index=True)

@@ -1,6 +1,7 @@
 import fitz  # PyMuPDF
 from datetime import date
 
+# Tạo tính năng Đóng Dấu Đỏ lên PDF
 def dong_dau_van_ban_den(file_path: str, so_den: int, ngay_den: date):
     try:
         doc = fitz.open(file_path)

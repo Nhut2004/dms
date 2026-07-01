@@ -174,7 +174,7 @@ def lay_chi_tiet_van_ban_den(
 UPLOAD_DIR = "uploads/van_ban_den"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-
+# Tích hợp Đóng dấu vào luồng Upload
 @router.post("/{van_ban_id}/upload", summary="Tải file đính kèm cho Văn bản đến")
 def upload_file_van_ban_den(
     van_ban_id: int,
