@@ -150,3 +150,44 @@ def lay_van_ban_trong_ho_so(
         "van_ban_den": ds_vb_den,
         "van_ban_di": ds_vb_di
     }
+
+from app.models.core import ViTriLuuTru
+from pydantic import BaseModel
+
+# Khai báo cấu trúc dữ liệu 
+class XepViTriHoSoRequest(BaseModel):
+    vi_tri_id: int
+
+# API Xếp vị trí kho lưu trữ cho một Hồ sơ
+@router.put("/{ma_ho_so}/xep-vi-tri")
+def xep_vi_tri_luu_tru_ho_so(
+    ma_ho_so: str,
+    data: XepViTriHoSoRequest,
+    db: Session = Depends(get_db),
+    nguoi_dung: TaiKhoan = Depends(lay_nguoi_dung_hien_tai)
+):
+    # 1. Kiểm tra xem hồ sơ đó có tồn tại không
+    ho_so = db.query(HoSo).filter(HoSo.ma_ho_so == ma_ho_so).first()
+    if not ho_so:
+        raise HTTPException(status_code=404, detail="Không tìm thấy hồ sơ!")
+
+    # 2. Kiểm tra xem ID vị trí truyền lên có thật trong DB không
+    vi_tri = db.query(ViTriLuuTru).filter(ViTriLuuTru.id == data.vi_tri_id).first()
+    if not vi_tri:
+        raise HTTPException(status_code=400, detail="Vị trí lưu trữ vật lý không tồn tại!")
+
+    # 3. Gán vị trí kho bãi cho hồ sơ (Khớp với khóa ngoại vi_tri_id trong Model)
+    ho_so.vi_tri_id = data.vi_tri_id
+    db.commit()
+    db.refresh(ho_so)
+
+    return {
+        "message": "Đã xếp vị trí lưu trữ vật lý cho hồ sơ thành công!",
+        "ma_ho_so": ho_so.ma_ho_so,
+        "vi_tri_luu_tru": {
+            "toa_nha": vi_tri.toa_nha,
+            "phong": vi_tri.phong,
+            "ke_tu": vi_tri.ke_tu,
+            "ngan_tang": vi_tri.ngan_tang
+        }
+    }

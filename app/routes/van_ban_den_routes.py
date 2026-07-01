@@ -336,3 +336,91 @@ def cap_nhat_tien_do_van_ban(
     db.refresh(van_ban)
 
     return {"message": "Cập nhật tiến độ xử lý thành công!"}
+
+from fastapi import Query
+from typing import Optional
+from datetime import date
+
+# 1. API Tìm kiếm nâng cao (Phiên bản vá lỗi - Khớp chuẩn 100% tên cột Database của hai đứa)
+@router.get("/v2/search", response_model=list[VanBanDenResponse])
+def tim_kiem_van_ban_den_chuan(
+    trich_yeu: Optional[str] = Query(None, description="Tìm theo trích yếu nội dung"),
+    trang_thai: Optional[str] = Query(None, description="Lọc theo trạng thái xử lý (CHO_XU_LY, DANG_XU_LY, DA_XU_LY)"),
+    db: Session = Depends(get_db),
+    nguoi_dung: TaiKhoan = Depends(lay_nguoi_dung_hien_tai)
+):
+    query = db.query(VanBanDen)
+    
+    # Sửa từ .subject.ilike sang .trich_yeu.ilike theo đúng Model
+    if trich_yeu:
+        query = query.filter(VanBanDen.trich_yeu.ilike(f"%{trich_yeu}%"))
+        
+    # Sửa từ .status sang .trang_thai_xu_ly theo đúng Model
+    if trang_thai:
+        query = query.filter(VanBanDen.trang_thai_xu_ly == trang_thai)
+        
+    return query.all()
+
+
+# 2. API Cập nhật ý kiến chỉ đạo (Phiên bản vá lỗi - Dành cho Lãnh đạo duyệt phân phối)
+@router.patch("/v2/{vb_id}/chi-dao", response_model=VanBanDenResponse)
+def cap_nhat_y_kien_chi_dao_chuan(
+    vb_id: int, 
+    y_kien: str = Query(..., description="Ý kiến phân phối, chỉ đạo của lãnh đạo"),
+    han_giai_quyet: Optional[date] = Query(None, description="Thời hạn giải quyết văn bản"),
+    db: Session = Depends(get_db),
+    nguoi_dung: TaiKhoan = Depends(lay_nguoi_dung_hien_tai)
+):
+    vb = db.query(VanBanDen).filter(VanBanDen.id == vb_id).first()
+    if not vb:
+        raise HTTPException(status_code=404, detail="Không tìm thấy văn bản này!")
+        
+    # Sửa các cột sai tên của Nhựt về chuẩn Model dữ liệu:
+    vb.y_kien_chi_dao = y_kien  # (Cũ là trace_header_list)
+    if han_giai_quyet:
+        vb.han_giai_quyet = han_giai_quyet  # (Cũ là due_date)
+        
+    vb.trang_thai_xu_ly = "DANG_XU_LY"  # (Cũ là .status = "Đang xử lý")
+    
+    db.commit()
+    db.refresh(vb)
+    return vb
+
+
+# 3. API Đưa văn bản đến nhập kho / xếp vào một Hồ sơ cụ thể
+class NhapHoSoInput(BaseModel):
+    ma_ho_so: str
+
+@router.put("/{id}/dua-vao-ho-so")
+def dua_van_ban_den_vao_ho_so(
+    id: int,
+    data: NhapHoSoInput,
+    db: Session = Depends(get_db),
+    nguoi_dung: TaiKhoan = Depends(lay_nguoi_dung_hien_tai)
+):
+    # Kiểm tra văn bản đến có tồn tại không
+    van_ban = db.query(VanBanDen).filter(VanBanDen.id == id).first()
+    if not van_ban:
+        raise HTTPException(status_code=404, detail="Không tìm thấy văn bản đến!")
+
+    # Kiểm tra hồ sơ lưu trữ xem có tồn tại và đã đóng chưa
+    ho_so = db.query(HoSo).filter(HoSo.ma_ho_so == data.ma_ho_so).first()
+    if not ho_so:
+        raise HTTPException(status_code=404, detail="Mã hồ sơ lưu trữ không tồn tại!")
+    if ho_so.trang_thai == "DA_DONG":
+        raise HTTPException(status_code=400, detail="Hồ sơ này đã đóng đóng tủ, không thể xếp thêm văn bản!")
+
+    # Tính toán số thứ tự (stt_trong_ho_so) tự động tăng dần trong hồ sơ đó
+    max_stt = db.query(func.max(VanBanDen.stt_trong_ho_so)).filter(VanBanDen.ma_ho_so == data.ma_ho_so).scalar() or 0
+    
+    # Cập nhật thông tin lưu trữ vào hồ sơ
+    van_ban.ma_ho_so = data.ma_ho_so
+    van_ban.stt_trong_ho_so = max_stt + 1
+    
+    db.commit()
+    db.refresh(van_ban)
+    
+    return {
+        "message": f"Đã xếp văn bản vào hồ sơ {data.ma_ho_so} thành công!",
+        "stt_trong_ho_so": van_ban.stt_trong_ho_so
+    }

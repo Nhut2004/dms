@@ -19,3 +19,67 @@ def lay_danh_sach_can_bo(
     nguoi_dung: TaiKhoan = Depends(lay_nguoi_dung_hien_tai)
 ):
     return db.query(CanBo).all()
+
+
+from fastapi import HTTPException
+from app.schemas.can_bo_schema import CanBoCreate, CanBoUpdate  # Đảm bảo có khai báo các schema này nếu cần
+from datetime import datetime
+
+# 1. API Lấy thông tin chi tiết của 1 Cán bộ theo ID
+@router.get("/{id}", response_model=CanBoResponse)
+def lay_chi_tiet_can_bo(
+    id: int, 
+    db: Session = Depends(get_db),
+    nguoi_dung: TaiKhoan = Depends(lay_nguoi_dung_hien_tai)
+):
+    can_bo = db.query(CanBo).filter(CanBo.id == id).first()
+    if not can_bo:
+        raise HTTPException(status_code=404, detail="Không tìm thấy cán bộ này!")
+    return can_bo
+
+# 2. API Lọc danh sách cán bộ theo từng cơ quan/phòng ban (Dùng khi phân công văn bản)
+@router.get("/co-quan/{co_quan_id}", response_model=List[CanBoResponse])
+def lay_can_bo_theo_co_quan(
+    co_quan_id: int,
+    db: Session = Depends(get_db),
+    nguoi_dung: TaiKhoan = Depends(lay_nguoi_dung_hien_tai)
+):
+    # Lọc cán bộ theo trường co_quan_id khớp với database
+    return db.query(CanBo).filter(CanBo.co_quan_id == co_quan_id).all()
+
+# 3. API Thêm mới một Cán bộ
+@router.post("/", response_model=CanBoResponse)
+def them_can_bo(
+    data: CanBoCreate, 
+    db: Session = Depends(get_db),
+    nguoi_dung: TaiKhoan = Depends(lay_nguoi_dung_hien_tai)
+):
+    can_bo_moi = CanBo(
+        ho_ten=data.ho_ten,
+        chuc_vu=data.chuc_vu,
+        co_quan_id=data.co_quan_id
+    )
+    db.add(can_bo_moi)
+    db.commit()
+    db.refresh(can_bo_moi)
+    return can_bo_moi
+
+# 4. API Cập nhật thông tin Cán bộ
+@router.put("/{id}", response_model=CanBoResponse)
+def cap_nhat_can_bo(
+    id: int,
+    data: CanBoUpdate,
+    db: Session = Depends(get_db),
+    nguoi_dung: TaiKhoan = Depends(lay_nguoi_dung_hien_tai)
+):
+    can_bo = db.query(CanBo).filter(CanBo.id == id).first()
+    if not can_bo:
+        raise HTTPException(status_code=404, detail="Không tìm thấy cán bộ để cập nhật!")
+    
+    can_bo.ho_ten = data.ho_ten
+    can_bo.chuc_vu = data.chuc_vu
+    can_bo.co_quan_id = data.co_quan_id
+    
+    db.commit()
+    db.refresh(can_bo)
+    return can_bo

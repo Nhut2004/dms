@@ -404,3 +404,119 @@ def cap_nhat_trang_thai(
         "trang_thai_moi": van_ban_di.trang_thai,
         "lien_thong_thanh_cong": data.trang_thai == 'PUBLISHED' and trang_thai_cu != 'PUBLISHED'
     }
+
+# =====================================================================
+# PHẦN KHÁNH BỔ SUNG: API TRÌNH DUYỆT & LÃNH ĐẠO PHÊ DUYỆT VĂN BẢN ĐI
+# =====================================================================
+from datetime import datetime
+from pydantic import BaseModel
+
+# Khai báo cấu trúc dữ liệu khi lãnh đạo phê duyệt / từ chối
+class DuyetVanBanDiRequest(BaseModel):
+    duyet: bool  # True nếu đồng ý, False nếu từ chối
+    ly_do_tu_choi: Optional[str] = None
+    so_ky_hieu: Optional[str] = None  # Nếu duyệt thì cấp luôn số ký hiệu chính thức (Ví dụ: 45/QĐ-UBND)
+
+# 1. API Trình duyệt văn bản (Chuyển từ DRAFT lên PENDING_APPROVAL)
+@router.patch("/{id}/trinh-duyet")
+def trinh_duyet_van_ban_di(
+    id: int,
+    db: Session = Depends(get_db),
+    nguoi_dung: TaiKhoan = Depends(lay_nguoi_dung_hien_tai)
+):
+    van_ban = db.query(VanBanDi).filter(VanBanDi.id == id).first()
+    if not van_ban:
+        raise HTTPException(status_code=404, detail="Không tìm thấy văn bản đi để trình duyệt!")
+        
+    if van_ban.trang_thai != "DRAFT":
+        raise HTTPException(status_code=400, detail="Chỉ văn bản ở trạng thái Dự thảo (DRAFT) mới có thể trình duyệt!")
+        
+    van_ban.trang_thai = "PENDING_APPROVAL"
+    db.commit()
+    return {"message": "Đã trình duyệt văn bản lên lãnh đạo thành công!"}
+
+# 2. API Lành đạo Phê duyệt hoặc Từ chối bản dự thảo văn bản đi
+@router.patch("/{id}/phe-duyet")
+def phe_duyet_van_ban_di(
+    id: int,
+    data: DuyetVanBanDiRequest,
+    db: Session = Depends(get_db),
+    nguoi_dung: TaiKhoan = Depends(lay_nguoi_dung_hien_tai)
+):
+    van_ban = db.query(VanBanDi).filter(VanBanDi.id == id).first()
+    if not van_ban:
+        raise HTTPException(status_code=404, detail="Không tìm thấy văn bản đi cần phê duyệt!")
+        
+    if van_ban.trang_thai != "PENDING_APPROVAL":
+        raise HTTPException(status_code=400, detail="Văn bản này hiện không nằm trong danh sách chờ duyệt!")
+
+    if data.duyet:
+        # TRƯỜNG HỢP 1: LÃNH ĐẠO ĐỒNG Ý PHÊ DUYỆT
+        if not data.so_ky_hieu:
+            raise HTTPException(status_code=400, detail="Khi phê duyệt phát hành bắt buộc phải cấp Số/Ký hiệu văn bản!")
+            
+        van_ban.trang_thai = "PUBLISHED"
+        van_ban.so_ky_hieu = data.so_ky_hieu
+        van_ban.ngay_ban_hanh = date.today() # Gán ngày ban hành chính thức là ngày hôm nay
+        
+        try:
+            max_so_den = db.query(func.max(VanBanDen.so_den)).scalar() or 0
+            
+            # Tìm họ tên lãnh đạo đang duyệt để ghi nhận người ký
+            ten_nguoi_ky = ""
+            can_bo_ky = db.query(CanBo).filter(CanBo.id == nguoi_dung.can_bo_id).first()
+            if can_bo_ky:
+                ten_nguoi_ky = can_bo_ky.ho_ten
+                van_ban.chuc_vu_nguoi_ky = can_bo_ky.chuc_vu
+
+            van_ban_den_moi = VanBanDen(
+                so_den=max_so_den + 1,
+                ky_hieu=data.so_ky_hieu,
+                ngay_den=date.today(),
+                ngay_ban_hanh=date.today(),
+                co_quan_ban_hanh_id=van_ban.don_vi_soan_thao_id,
+                ma_loai_vb_id=van_ban.ma_loai_vb_id,
+                trich_yeu=van_ban.trich_yeu,
+                so_trang=van_ban.so_trang,
+                ho_ten_nguoi_ky=ten_nguoi_ky,
+                chuc_vu_nguoi_ky=van_ban.chuc_vu_nguoi_ky,
+                do_khan=van_ban.muc_do_khan,
+                don_vi_nhan=van_ban.noi_nhan,
+                trang_thai_xu_ly='CHO_XU_LY'
+            )
+            db.add(van_ban_den_moi)
+            db.flush()
+
+            # Copy file đính kèm sang văn bản đến liên thông
+            tep_dinh_kems = db.query(FileDinhKem).filter(
+                FileDinhKem.van_ban_id == van_ban.id,
+                FileDinhKem.loai_van_ban == 'VAN_BAN_DI'
+            ).all()
+
+            for tep in tep_dinh_kems:
+                db.add(FileDinhKem(
+                    loai_van_ban='VAN_BAN_DEN',
+                    van_ban_id=van_ban_den_moi.id,
+                    ten_file=tep.ten_file,
+                    duong_dan=tep.duong_dan,
+                    dinh_dang=tep.dinh_dang,
+                    dung_luong=tep.dung_luong
+                ))
+        except Exception as e:
+            db.rollback()
+            raise HTTPException(status_code=500, detail=f"Lỗi liên thông khi phê duyệt: {str(e)}")
+            
+    else:
+        # TRƯỜNG HỢP 2: LÃNH ĐẠO TỪ CHỐI DUYỆT (Trả lại về DRAFT để sửa đổi)
+        if not data.ly_do_tu_choi:
+            raise HTTPException(status_code=400, detail="Vui lòng nhập lý do từ chối phê duyệt!")
+            
+        van_ban.trang_thai = "DRAFT"
+        van_ban.ghi_chu = f" Bị từ chối duyệt. Lý do: {data.ly_do_tu_choi}"
+
+    db.commit()
+    db.refresh(van_ban)
+    return {
+        "message": "Xử lý phê duyệt văn bản đi thành công!",
+        "trang_thai_hien_tai": van_ban.trang_thai
+    }

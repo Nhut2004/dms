@@ -60,3 +60,73 @@ def thong_ke_tong_quan(
             }
         }
     }
+
+from app.models.core import DanhMucLoaiVb, CoQuanToChuc
+
+# 1. API Thống kê số lượng Văn bản đến theo từng Loại văn bản (Ví dụ: bao nhiêu Công văn, bao nhiêu Quyết định)
+@router.get("/van-ban-den/loai-van-ban")
+def thong_ke_vb_den_theo_loai(
+    db: Session = Depends(get_db),
+    nguoi_dung: TaiKhoan = Depends(lay_nguoi_dung_hien_tai)
+):
+    # Join bảng VanBanDen với DanhMucLoaiVb để lấy tên loại văn bản hiển thị lên biểu đồ
+    ket_qua = db.query(
+        DanhMucLoaiVb.ten_loai_vb,
+        func.count(VanBanDen.id).label("so_luong")
+    ).join(
+        VanBanDen, VanBanDen.ma_loai_vb_id == DanhMucLoaiVb.id
+    ).group_by(
+        DanhMucLoaiVb.ten_loai_vb
+    ).all()
+    
+    return [{"loai_van_ban": item[0], "so_luong": item[1]} for item in ket_qua]
+
+# 2. API Thống kê số lượng Văn bản đến theo Cơ quan ban hành (Biết nguồn văn bản chủ yếu từ đâu tới)
+@router.get("/van-ban-den/co-quan")
+def thong_ke_vb_den_theo_co_quan(
+    db: Session = Depends(get_db),
+    nguoi_dung: TaiKhoan = Depends(lay_nguoi_dung_hien_tai)
+):
+    # Join bảng VanBanDen với CoQuanToChuc
+    ket_qua = db.query(
+        CoQuanToChuc.ten_co_quan,
+        func.count(VanBanDen.id).label("so_luong")
+    ).join(
+        VanBanDen, VanBanDen.co_quan_ban_hanh_id == CoQuanToChuc.id
+    ).group_by(
+        CoQuanToChuc.ten_co_quan
+    ).all()
+    
+    return [{"co_quan": item[0], "so_luong": item[1]} for item in ket_qua]
+
+# 3. API Thống kê số lượng văn bản xử lý theo xu hướng thời gian (Theo tháng trong năm hiện tại)
+@router.get("/xu-huong-theo-thang")
+def thong_ke_xu_huong_theo_thang(
+    nam: int = None, #  Chuyển mặc định thành None
+    db: Session = Depends(get_db),
+    nguoi_dung: TaiKhoan = Depends(lay_nguoi_dung_hien_tai)
+):
+    #  Nếu người dùng KHÔNG truyền năm lên, hệ thống sẽ TỰ ĐỘNG lấy năm hiện tại của máy tính lúc đó
+    if nam is None:
+        nam = datetime.now().year 
+        
+    vb_den_theo_thang = db.query(
+        func.extract('month', VanBanDen.ngay_den).label('thang'),
+        func.count(VanBanDen.id).label('so_luong')
+    ).filter(
+        func.extract('year', VanBanDen.ngay_den) == nam
+    ).group_by(
+        func.extract('month', VanBanDen.ngay_den)
+    ).all()
+
+    # Chuyển đổi dữ liệu trả về cho Frontend dễ map vào biểu đồ đường (Line Chart)
+    data_den = {int(item[0]): item[1] for item in vb_den_theo_thang}
+    
+    bieu_do_xu_huong = []
+    for m in range(1, 13):
+        bieu_do_xu_huong.append({
+            "thang": f"Tháng {m}",
+            "van_ban_den": data_den.get(m, 0)
+        })
+        
+    return bieu_do_xu_huong
