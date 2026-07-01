@@ -1,52 +1,65 @@
 from pydantic import BaseModel
-from typing import Optional
-from datetime import date, datetime
+from typing import Optional, List
+from datetime import date
 
-# Schema nhận dữ liệu tạo mới
+
+class FileDinhKemResponse(BaseModel):
+    id: int
+    loai_van_ban: str
+    van_ban_id: int
+    ten_file: str
+    duong_dan: str
+    dinh_dang: Optional[str] = None
+    dung_luong: Optional[float] = None
+
+    class Config:
+        from_attributes = True
 
 
 class VanBanDiCreate(BaseModel):
-    # Thông tin ban hành
-    organ_id: str
-    organ_name: Optional[str] = None
-    type_name: Optional[str] = None
-    code_number: Optional[str] = None
-    code_notation: Optional[str] = None
-    issued_date: Optional[date] = None
-
-    # Nội dung
-    subject: Optional[str] = None
-    language: Optional[str] = "Tiếng Việt"
-    page_amount: Optional[int] = None
-    description: Optional[str] = None
-    priority: Optional[int] = 1
-    issued_amount: Optional[int] = 1
-    due_date: Optional[date] = None
-
-    # Nơi nhận và Người ký
-    to_organ_id: Optional[str] = None
-    to_organ_name: Optional[str] = None
-    signer_position: Optional[str] = None
-    signer_full_name: Optional[str] = None
-
-    # Các khóa ngoại liên kết (Bắt buộc phải có để nối dữ liệu)
-    ho_so_id: Optional[int] = None
-    loai_vb_id: int
-
-# Schema trả kết quả về (hiển thị một số thông tin quan trọng)
+    so_ky_hieu: Optional[str] = None
+    ngay_ban_hanh: Optional[date] = None
+    trich_yeu: str
+    don_vi_soan_thao_id: int
+    ma_loai_vb_id: int
+    ngon_ngu: Optional[str] = "Tiếng Việt"
+    so_trang: Optional[int] = None
+    ghi_chu: Optional[str] = None
+    nguoi_ky_id: Optional[int] = None
+    chuc_vu_nguoi_ky: Optional[str] = None
+    noi_nhan: Optional[str] = None
+    muc_do_khan: Optional[int] = None
+    trang_thai: Optional[str] = "DRAFT"
+    han_tra_loi: Optional[date] = None
+    stt_trong_ho_so: Optional[int] = None
+    ma_ho_so: Optional[str] = None
+    so_luong_ban_phat_hanh: Optional[int] = None
 
 
 class VanBanDiResponse(BaseModel):
     id: int
-    organ_id: str
-    code_notation: Optional[str]
-    subject: Optional[str]
-    issued_date: Optional[date]
-    status: str
-    loai_vb_id: int
-    nguoi_soan_id: int
-    ho_so_id: Optional[int]
-    created_at: datetime
+    so_ky_hieu: Optional[str] = None
+    ngay_ban_hanh: Optional[date] = None
+    trich_yeu: str
+    don_vi_soan_thao_id: int
+    ma_loai_vb_id: int
+    ngon_ngu: Optional[str] = None
+    so_trang: Optional[int] = None
+    ghi_chu: Optional[str] = None
+    nguoi_ky_id: Optional[int] = None
+    chuc_vu_nguoi_ky: Optional[str] = None
+    noi_nhan: Optional[str] = None
+    muc_do_khan: Optional[int] = None
+    han_tra_loi: Optional[date] = None
+    stt_trong_ho_so: Optional[int] = None
+    ma_ho_so: Optional[str] = None
+    trang_thai: Optional[str] = None
+    tep_dinh_kems: Optional[List[FileDinhKemResponse]] = None
+    so_luong_ban_phat_hanh: Optional[int] = None
+
+
+class TrangThaiUpdate(BaseModel):
+    trang_thai: str
 
     class Config:
         from_attributes = True
