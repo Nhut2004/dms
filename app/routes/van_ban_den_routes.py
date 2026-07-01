@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from config.database import get_db
 from sqlalchemy import func, or_
 from app.models.document import VanBanDen
-from app.schemas.van_ban_den_schema import VanBanDenCreate, VanBanDenUpdate, VanBanDenResponse
+from app.schemas.van_ban_den_schema import VanBanDenCreate, VanBanDenUpdate, VanBanDenResponse, PhanPhoiInput, TienDoInput
 from app.dependencies import lay_nguoi_dung_hien_tai
 from app.models.auth import TaiKhoan, CanBo
 from app.models.document import VanBanDen, FileDinhKem
@@ -226,14 +226,6 @@ def upload_file_van_ban_den(
     return {"message": f"Đã tải lên {len(file_responses)} file thành công!", "files": file_responses}
 
 # --- BLOCK API PHÂN PHỐI VÀ XỬ LÝ VĂN BẢN ĐẾN ---
-
-
-class PhanPhoiInput(BaseModel):
-    nguoi_xu_ly_id: int
-
-
-class TienDoInput(BaseModel):
-    trang_thai_xu_ly: str
 
 
 @router.patch("/{id}/phan-phoi")

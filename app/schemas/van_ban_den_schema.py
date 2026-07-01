@@ -69,3 +69,11 @@ class VanBanDenResponse(VanBanDenBase):
 
     class Config:
         from_attributes = True
+
+
+class PhanPhoiInput(BaseModel):
+    nguoi_xu_ly_id: int
+
+
+class TienDoInput(BaseModel):
+    trang_thai_xu_ly: str
