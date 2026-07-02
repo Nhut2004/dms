@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Tag, Tabs, Table, Button, Space, Modal, Form, Input, DatePicker, InputNumber, Select, message, Popconfirm, Tooltip } from 'antd';
 import axios from 'axios';
 import dayjs from 'dayjs';
-import { EyeOutlined, EditOutlined, LockOutlined, DeleteOutlined } from '@ant-design/icons';
+import { EyeOutlined, FileDoneOutlined, EditOutlined, LockOutlined, DeleteOutlined } from '@ant-design/icons';
 const API_URL = 'http://localhost:8000/api/ho-so/';
 const BASE_URL = 'http://localhost:8000';
 
@@ -26,7 +26,7 @@ const ListHoSo = () => {
     const [vbDenData, setVbDenData] = useState([]);
     const [vbDiData, setVbDiData] = useState([]);
     const [modalLoading, setModalLoading] = useState(false);
-
+    const [nopLuuLoading, setNopLuuLoading] = useState(null);
     // 1. Khởi tạo State phân trang
     const [pagination, setPagination] = useState({
         current: 1,
@@ -99,6 +99,18 @@ const ListHoSo = () => {
         }
     };
 
+    const handleNopLuu = async (maHoSo) => {
+        try {
+            await axios.patch(`${BASE_URL}/api/ho-so/${maHoSo}/nop-luu`, {}, {
+                headers: getAuthHeaders()
+            });
+            message.success("Nộp lưu hồ sơ thành công!");
+
+            fetchData(pagination.current, pagination.pageSize, searchText);
+        } catch (error) {
+            message.error(error.response?.data?.detail || "Lỗi nộp lưu");
+        }
+    };
 
     const handleViewDetails = async (record) => {
         setCurrentHoSo(record);
@@ -234,9 +246,8 @@ const ListHoSo = () => {
             title: 'Hành động',
             key: 'action',
             align: 'center',
-            width: 220, // Tăng width đủ rộng để chứa 4 khối nút
+            width: 280, // Tăng nhẹ width để chứa thêm nút Nộp lưu
             render: (_, record) => (
-                // Dùng whiteSpace: 'nowrap' để ép các nút luôn nằm trên 1 hàng ngang
                 <Space size="small" style={{ whiteSpace: 'nowrap' }}>
                     <Tooltip title="Xem văn bản">
                         <Button type="primary" icon={<EyeOutlined />} onClick={() => handleViewDetails(record)} />
@@ -250,6 +261,26 @@ const ListHoSo = () => {
                         <Tooltip title="Đóng hồ sơ">
                             <Popconfirm title="Bạn có chắc muốn đóng hồ sơ này?" onConfirm={() => handleDongHoSo(record.ma_ho_so)}>
                                 <Button type="primary" style={{ backgroundColor: '#faad14' }} icon={<LockOutlined />} />
+                            </Popconfirm>
+                        </Tooltip>
+                    )}
+
+                    {/* NÚT NỘP LƯU MỚI THÊM VÀO */}
+                    {record.trang_thai === 'DA_DONG' && (
+                        <Tooltip title="Nộp lưu hồ sơ">
+                            <Popconfirm
+                                title="Xác nhận nộp lưu"
+                                description="Bạn có chắc chắn muốn nộp lưu hồ sơ này?"
+                                onConfirm={() => handleNopLuu(record.ma_ho_so)}
+                                okText="Đồng ý"
+                                cancelText="Hủy"
+                            >
+                                <Button
+                                    type="primary"
+                                    icon={<FileDoneOutlined />}
+                                    loading={nopLuuLoading === record.ma_ho_so}
+                                    style={{ backgroundColor: '#1677ff', borderColor: '#1677ff' }}
+                                />
                             </Popconfirm>
                         </Tooltip>
                     )}
