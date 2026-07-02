@@ -29,10 +29,10 @@ def tao_van_ban_den(
     if van_ban.ma_ho_so:
         ho_so = db.query(HoSo).filter(
             HoSo.ma_ho_so == van_ban.ma_ho_so).first()
-        if ho_so and ho_so.trang_thai == "DA_DONG":
+        if ho_so and ho_so.trang_thai in {"DA_DONG", "DA_NOP_LUU"}:
             raise HTTPException(
                 status_code=400,
-                detail=f"Hồ sơ {van_ban.ma_ho_so} đã đóng, không thể thêm văn bản!"
+                detail="Không thể thêm/chỉnh sửa văn bản trong hồ sơ đã đóng hoặc đã nộp lưu!"
             )
 
     # 2. XỬ LÝ SỐ ĐẾN THÔNG MINH (Thay thế đoạn raise HTTPException cũ)
@@ -103,10 +103,10 @@ def cap_nhat_van_ban_den(
     ma_ho_so_moi = van_ban_update.ma_ho_so if van_ban_update.ma_ho_so is not None else db_van_ban.ma_ho_so
     if ma_ho_so_moi:
         ho_so = db.query(HoSo).filter(HoSo.ma_ho_so == ma_ho_so_moi).first()
-        if ho_so and ho_so.trang_thai == "DA_DONG":
+        if ho_so and ho_so.trang_thai in {"DA_DONG", "DA_NOP_LUU"}:
             raise HTTPException(
                 status_code=400,
-                detail=f"Hồ sơ {ma_ho_so_moi} đã đóng, không thể đưa văn bản vào đây!"
+                detail="Không thể thêm/chỉnh sửa văn bản trong hồ sơ đã đóng hoặc đã nộp lưu!"
             )
 
     # --- BLOCK VALIDATE NGHIỆP VỤ KHI CẬP NHẬT ---

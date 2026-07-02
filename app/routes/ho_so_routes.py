@@ -23,7 +23,8 @@ def tao_ho_so(
 ):
     kiem_tra = db.query(HoSo).filter(HoSo.ma_ho_so == ho_so.ma_ho_so).first()
     if kiem_tra:
-        raise HTTPException(status_code=400, detail="Mã hồ sơ đã tồn tại!")
+        raise HTTPException(
+            status_code=400, detail="Mã hồ sơ này đã tồn tại trên hệ thống!")
 
     ho_so_moi = HoSo(**ho_so.model_dump())
     db.add(ho_so_moi)

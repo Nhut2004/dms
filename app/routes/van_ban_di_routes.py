@@ -42,10 +42,10 @@ async def tao_van_ban_di(
 
     if ma_ho_so:
         ho_so = db.query(HoSo).filter(HoSo.ma_ho_so == ma_ho_so).first()
-        if ho_so and ho_so.trang_thai == "DA_DONG":
+        if ho_so and ho_so.trang_thai in {"DA_DONG", "DA_NOP_LUU"}:
             raise HTTPException(
                 status_code=400,
-                detail=f"Hồ sơ {ma_ho_so} đã đóng, không thể thêm văn bản mới vào hồ sơ này!"
+                detail="Không thể thêm/chỉnh sửa văn bản trong hồ sơ đã đóng hoặc đã nộp lưu!"
             )
 
     # --- BLOCK VALIDATE NGHIỆP VỤ ---
@@ -168,10 +168,10 @@ async def cap_nhat_van_ban_di(
 
     if ma_ho_so_moi:
         ho_so = db.query(HoSo).filter(HoSo.ma_ho_so == ma_ho_so_moi).first()
-        if ho_so and ho_so.trang_thai == "DA_DONG":
+        if ho_so and ho_so.trang_thai in {"DA_DONG", "DA_NOP_LUU"}:
             raise HTTPException(
                 status_code=400,
-                detail=f"Hồ sơ {ma_ho_so_moi} đã đóng, không thể đưa văn bản vào đây!"
+                detail="Không thể thêm/chỉnh sửa văn bản trong hồ sơ đã đóng hoặc đã nộp lưu!"
             )
     # --- BLOCK VALIDATE NGHIỆP VỤ KHI CẬP NHẬT ---
     ngay_ban_hanh_check = ngay_ban_hanh if ngay_ban_hanh else van_ban.ngay_ban_hanh

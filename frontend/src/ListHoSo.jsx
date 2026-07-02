@@ -466,15 +466,32 @@ const ListHoSo = () => {
                         <Form.Item name="ngay_bat_dau" label="Ngày bắt đầu" style={{ width: '50%' }}>
                             <DatePicker style={{ width: '100%' }} format="YYYY-MM-DD" />
                         </Form.Item>
-                        <Form.Item name="ngay_ket_thuc" label="Ngày kết thúc" style={{ width: '50%' }}>
+                        <Form.Item
+                            name="ngay_ket_thuc"
+                            label="Ngày kết thúc"
+                            style={{ width: '50%' }}
+                            dependencies={["ngay_bat_dau"]}
+                            rules={[
+                                ({ getFieldValue }) => ({
+                                    validator(_, value) {
+                                        const ngayBatDau = getFieldValue('ngay_bat_dau');
+                                        if (!value || !ngayBatDau || value.isSame(ngayBatDau) || value.isAfter(ngayBatDau)) {
+                                            return Promise.resolve();
+                                        }
+                                        return Promise.reject(new Error('Ngày kết thúc phải lớn hơn hoặc bằng ngày bắt đầu'));
+                                    }
+                                })
+                            ]}
+                        >
                             <DatePicker style={{ width: '100%' }} format="YYYY-MM-DD" />
                         </Form.Item>
                     </Space>
                     <Form.Item name="so_luong_trang" label="Số lượng trang" rules={[{ type: 'number', min: 0, message: 'Số trang không được âm!' }]}>
-                        <InputNumber style={{ width: '100%' }} />
+
+                        <InputNumber min={0} style={{ width: '100%' }} />
                     </Form.Item>
                     <Form.Item name="so_luong_van_ban" label="Số lượng văn bản" rules={[{ type: 'number', min: 0, message: 'Số lượng không được âm!' }]}>
-                        <InputNumber style={{ width: '100%' }} />
+                        <InputNumber min={0} style={{ width: '100%' }} />
                     </Form.Item>
                     <Form.Item name="nguoi_lap" label="Người lập"><Input /></Form.Item>
                     <Form.Item name="ngon_ngu" label="Ngôn ngữ"><Input /></Form.Item>
