@@ -188,8 +188,20 @@ const ListHoSo = () => {
             align: 'center',
             width: 120,
             render: (text) => {
-                let color = text === 'DANG_MO' ? 'green' : (text === 'DA_DONG' ? 'red' : 'default');
-                let label = text === 'DANG_MO' ? 'Đang mở' : (text === 'DA_DONG' ? 'Đã đóng' : text);
+                let color = 'default';
+                let label = text;
+
+                if (text === 'DANG_MO') {
+                    color = 'green';
+                    label = 'Đang mở';
+                } else if (text === 'DA_DONG') {
+                    color = 'red';
+                    label = 'Đã đóng';
+                } else if (text === 'DA_NOP_LUU') {
+                    color = 'blue'; // Màu xanh dương chuyên nghiệp cho kho lưu trữ
+                    label = 'Đã nộp lưu';
+                }
+
                 return <Tag color={color}>{label || 'Đang mở'}</Tag>;
             }
         },
@@ -264,8 +276,6 @@ const ListHoSo = () => {
                             </Popconfirm>
                         </Tooltip>
                     )}
-
-                    {/* NÚT NỘP LƯU MỚI THÊM VÀO */}
                     {record.trang_thai === 'DA_DONG' && (
                         <Tooltip title="Nộp lưu hồ sơ">
                             <Popconfirm
