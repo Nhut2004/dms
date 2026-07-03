@@ -10,7 +10,7 @@ import ListHoSo from './ListHoSo';
 import Dashboard from './Dashboard';
 const ProtectedRoute = ({ children }) => {
   const token = localStorage.getItem('access_token');
-  if (!token) {
+  if (!token || token === 'null' || token === 'undefined' || token.trim() === '') {
     return <Navigate to="/login" replace />;
   }
   return children;

@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field, model_validator
-from typing import Optional, List
-from datetime import date
+from typing import Optional, List, Literal
+from datetime import date, datetime
 
 
 class FileDinhKemResponse(BaseModel):
@@ -29,7 +29,8 @@ class VanBanDiCreate(BaseModel):
     chuc_vu_nguoi_ky: Optional[str] = None
     noi_nhan: Optional[str] = None
     muc_do_khan: Optional[int] = Field(default=None, ge=1, le=5)
-    trang_thai: Optional[str] = "DRAFT"
+    trang_thai: Optional[Literal['DRAFT', 'PENDING_APPROVAL',
+                                 'APPROVED', 'PUBLISHED', 'REVOKED']] = "DRAFT"
     han_tra_loi: Optional[date] = None
     stt_trong_ho_so: Optional[int] = None
     ma_ho_so: Optional[str] = None
@@ -59,13 +60,25 @@ class VanBanDiResponse(BaseModel):
     han_tra_loi: Optional[date] = None
     stt_trong_ho_so: Optional[int] = None
     ma_ho_so: Optional[str] = None
-    trang_thai: Optional[str] = None
+    trang_thai: Optional[Literal['DRAFT', 'PENDING_APPROVAL',
+                                 'APPROVED', 'PUBLISHED', 'REVOKED']] = None
+    approved_by: Optional[str] = None
+    approved_at: Optional[datetime] = None
+    submitted_at: Optional[datetime] = None
+    revoke_reason: Optional[str] = None
     tep_dinh_kems: Optional[List[FileDinhKemResponse]] = None
     so_luong_ban_phat_hanh: Optional[int] = None
 
 
 class TrangThaiUpdate(BaseModel):
     trang_thai: str
+
+    class Config:
+        from_attributes = True
+
+
+class ReasonRequest(BaseModel):
+    reason: str
 
     class Config:
         from_attributes = True
