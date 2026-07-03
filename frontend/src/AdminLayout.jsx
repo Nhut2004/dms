@@ -6,7 +6,9 @@ import {
     SendOutlined,
     FolderOpenOutlined,
     ApartmentOutlined,
-    LogoutOutlined
+    LogoutOutlined,
+    UserOutlined,
+    BankOutlined
 } from '@ant-design/icons';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 
@@ -17,7 +19,8 @@ const menuItems = [
     { key: '/van-ban-den', icon: <FileTextOutlined />, label: 'Quản lý Văn bản đến' },
     { key: '/van-ban-di', icon: <SendOutlined />, label: 'Quản lý Văn bản đi' },
     { key: '/ho-so', icon: <FolderOpenOutlined />, label: 'Quản lý Hồ sơ' },
-    { key: '/co-quan', icon: <ApartmentOutlined />, label: 'Quản lý Cơ quan' }
+    { key: '/can-bo', icon: <UserOutlined />, label: 'Quản lý Cán bộ' },
+    { key: '/co-quan', icon: <BankOutlined />, label: 'Quản lý Cơ quan' }
 ];
 
 const AdminLayout = () => {
