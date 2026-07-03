@@ -57,3 +57,7 @@ app.include_router(thong_ke_routes.router)
 @app.get("/")
 def read_root():
     return {"message": "Hệ thống DMS đã khởi động với kiến trúc 16 bảng mới!"}
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)

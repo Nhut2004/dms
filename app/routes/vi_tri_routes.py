@@ -5,6 +5,7 @@ from config.database import get_db
 from app.models.core import ViTriLuuTru
 from app.dependencies import lay_nguoi_dung_hien_tai
 from app.models.auth import TaiKhoan
+from typing import Optional
 
 router = APIRouter(
     prefix="/api/danh-muc-vi-tri",

@@ -341,7 +341,7 @@ from fastapi import Query
 from typing import Optional
 from datetime import date
 
-# 1. API Tìm kiếm nâng cao (Phiên bản vá lỗi - Khớp chuẩn 100% tên cột Database của hai đứa)
+# 1. API Tìm kiếm nâng cao 
 @router.get("/v2/search", response_model=list[VanBanDenResponse])
 def tim_kiem_van_ban_den_chuan(
     trich_yeu: Optional[str] = Query(None, description="Tìm theo trích yếu nội dung"),

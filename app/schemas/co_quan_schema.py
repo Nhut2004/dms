@@ -21,3 +21,6 @@ class CoQuanResponse(BaseModel):
 
     class Config:
         from_attributes = True  # Cho phép Pydantic đọc dữ liệu trực tiếp từ SQLAlchemy Model
+
+class CoQuanUpdate(CoQuanCreate):
+    pass

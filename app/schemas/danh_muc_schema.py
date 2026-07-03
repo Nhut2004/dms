@@ -14,3 +14,6 @@ class DanhMucResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+class DanhMucUpdate(DanhMucCreate):
+    pass

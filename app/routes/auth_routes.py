@@ -54,7 +54,7 @@ def dang_nhap(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = De
 
 
 from app.models.auth import CanBo  # Nhớ đảm bảo đầu file hoặc ở đây đã import CanBo để liên kết bảng
-from app.dependencies import get_current_user  # Dependency lấy tài khoản từ token 
+from app.dependencies import lay_nguoi_dung_hien_tai  # Dependency lấy tài khoản từ token 
 from pydantic import BaseModel
 
 # Khai báo cấu trúc dữ liệu Frontend gửi lên khi đổi mật khẩu
@@ -64,7 +64,7 @@ class DoiMatKhauRequest(BaseModel):
 
 # 1. API lấy thông tin chi tiết của người đang đăng nhập (Frontend cần dùng khi tải lại trang)
 @router.get("/me")
-def lay_thong_tin_ca_nhan(current_user: TaiKhoan = Depends(get_current_user), db: Session = Depends(get_db)):
+def lay_thong_tin_ca_nhan(current_user: TaiKhoan = Depends(lay_nguoi_dung_hien_tai), db: Session = Depends(get_db)):
     ho_ten_can_bo = None
     chuc_vu = None
     
@@ -89,7 +89,7 @@ def lay_thong_tin_ca_nhan(current_user: TaiKhoan = Depends(get_current_user), db
 
 # 2. API Đổi mật khẩu tài khoản
 @router.put("/change-password")
-def doi_mat_khau(data: DoiMatKhauRequest, current_user: TaiKhoan = Depends(get_current_user), db: Session = Depends(get_db)):
+def doi_mat_khau(data: DoiMatKhauRequest, current_user: TaiKhoan = Depends(lay_nguoi_dung_hien_tai), db: Session = Depends(get_db)):
     # Xác minh mật khẩu cũ có đúng với hash trong database không
     if not pwd_context.verify(data.mat_khau_cu, current_user.mat_khau_hash):
         raise HTTPException(status_code=400, detail="Mật khẩu cũ không chính xác!")
