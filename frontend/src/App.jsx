@@ -7,10 +7,12 @@ import ListVanBanDi from './ListVanBanDi';
 // 1. Thêm import component ListVanBanDen vừa tạo
 import ListVanBanDen from './ListVanBanDen';
 import ListHoSo from './ListHoSo';
+import ListCanBo from './ListCanBo';
+import ListCoQuan from './ListCoQuan';
 import Dashboard from './Dashboard';
 const ProtectedRoute = ({ children }) => {
   const token = localStorage.getItem('access_token');
-  if (!token) {
+  if (!token || token === 'null' || token === 'undefined' || token.trim() === '') {
     return <Navigate to="/login" replace />;
   }
   return children;
@@ -38,6 +40,8 @@ const App = () => {
           <Route path="them-van-ban" element={<CreateVanBanDi />} />
           <Route path="sua-van-ban/:id" element={<CreateVanBanDi />} />
           <Route path="ho-so" element={<ListHoSo />} />
+          <Route path="can-bo" element={<ListCanBo />} />
+          <Route path="co-quan" element={<ListCoQuan />} />
 
           {/* Luồng Văn bản đến */}
           <Route path="van-ban-den" element={<ListVanBanDen />} />

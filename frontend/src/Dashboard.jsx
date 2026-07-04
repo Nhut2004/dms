@@ -133,15 +133,21 @@ const Dashboard = () => {
                             <Text>Đang mở</Text>
                             <Progress percent={calcPercent(data.ho_so.trang_thai.DANG_MO, data.ho_so.tong)} size="small" status="active" strokeColor="#1890ff" />
                         </div>
-                        <div>
+                        <div style={{ marginBottom: '16px' }}>
                             <Text>Đã đóng</Text>
-                            <Progress percent={calcPercent(data.ho_so.trang_thai.DA_DONG, data.ho_so.tong)} size="small" strokeColor="#8c8c8c" />
+                            <Progress percent={calcPercent(data.ho_so.trang_thai.DA_DONG, data.ho_so.tong)} size="small" strokeColor="#faad14" />
+                        </div>
+                        {/* THÊM THANH TIẾN ĐỘ CHO HỒ SƠ ĐÃ NỘP LƯU */}
+                        <div style={{ marginBottom: '16px' }}>
+                            <Text>Đã nộp lưu</Text>
+                            <Progress percent={calcPercent(data.ho_so.trang_thai.DA_NOP_LUU, data.ho_so.tong)} size="small" strokeColor="#52c41a" />
                         </div>
 
-                        <div style={{ marginTop: '32px', padding: '12px', background: '#f0f2f5', borderRadius: '8px' }}>
+                        <div style={{ marginTop: '20px', padding: '12px', background: '#f0f2f5', borderRadius: '8px' }}>
                             <Text type="secondary" style={{ display: 'block', marginBottom: '8px' }}>Phân bổ nhanh:</Text>
                             <Tag color="blue">Đang mở: {data.ho_so.trang_thai.DANG_MO}</Tag>
-                            <Tag color="default">Đã đóng: {data.ho_so.trang_thai.DA_DONG}</Tag>
+                            <Tag color="warning">Đã đóng: {data.ho_so.trang_thai.DA_DONG}</Tag>
+                            <Tag color="green">Đã nộp lưu: {data.ho_so.trang_thai.DA_NOP_LUU || 0}</Tag> {/* THÊM TAG NÀY */}
                         </div>
                     </Card>
                 </Col>
