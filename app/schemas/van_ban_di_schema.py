@@ -66,8 +66,11 @@ class VanBanDiResponse(BaseModel):
     approved_at: Optional[datetime] = None
     submitted_at: Optional[datetime] = None
     revoke_reason: Optional[str] = None
-    tep_dinh_kems: Optional[List[FileDinhKemResponse]] = None
+    tep_dinh_kems: List[FileDinhKemResponse] = []
     so_luong_ban_phat_hanh: Optional[int] = None
+
+    class Config:
+        from_attributes = True
 
 
 class TrangThaiUpdate(BaseModel):
