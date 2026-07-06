@@ -8,7 +8,7 @@ from app.models.core import CoQuanToChuc
 from app.schemas.co_quan_schema import CoQuanCreate, CoQuanResponse
 
 # Gắn thêm bảo vệ
-from app.dependencies import lay_nguoi_dung_hien_tai
+from app.dependencies import lay_nguoi_dung_hien_tai, require_roles
 from app.models.auth import TaiKhoan
 
 router = APIRouter(
@@ -21,7 +21,7 @@ router = APIRouter(
 def tao_co_quan(
     co_quan: CoQuanCreate,
     db: Session = Depends(get_db),
-    nguoi_dung: TaiKhoan = Depends(lay_nguoi_dung_hien_tai)  # Khóa API này lại
+    nguoi_dung: TaiKhoan = Depends(require_roles(["ADMIN", "VAN_THU"]))
 ):
     kiem_tra = db.query(CoQuanToChuc).filter(
         CoQuanToChuc.organ_id == co_quan.organ_id).first()
@@ -46,7 +46,7 @@ def cap_nhat_co_quan(
     id: int,
     co_quan: CoQuanCreate,
     db: Session = Depends(get_db),
-    nguoi_dung: TaiKhoan = Depends(lay_nguoi_dung_hien_tai)
+    nguoi_dung: TaiKhoan = Depends(require_roles(["ADMIN", "VAN_THU"]))
 ):
     co_quan_hien_tai = db.query(CoQuanToChuc).filter(
         CoQuanToChuc.id == id).first()
@@ -72,7 +72,7 @@ def cap_nhat_co_quan(
 def xoa_co_quan(
     id: int,
     db: Session = Depends(get_db),
-    nguoi_dung: TaiKhoan = Depends(lay_nguoi_dung_hien_tai)
+    nguoi_dung: TaiKhoan = Depends(require_roles(["ADMIN", "VAN_THU"]))
 ):
     co_quan = db.query(CoQuanToChuc).filter(CoQuanToChuc.id == id).first()
     if not co_quan:

@@ -23,9 +23,13 @@ const Login = () => {
             );
 
             if (response.status === 200) {
+                // Lưu thẻ token
                 localStorage.setItem('access_token', response.data.access_token);
-                message.success('Đăng nhập thành công!');
 
+                // THÊM DÒNG NÀY: Lưu danh sách quyền từ Backend gửi về
+                localStorage.setItem('user_roles', JSON.stringify(response.data.vai_tros || []));
+
+                message.success('Đăng nhập thành công!');
                 navigate('/');
             }
         } catch (error) {

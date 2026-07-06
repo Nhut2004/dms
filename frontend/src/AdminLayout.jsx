@@ -14,22 +14,35 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 
 const { Sider, Header, Content } = Layout;
 
-const menuItems = [
-    { key: '/dashboard', icon: <DashboardOutlined />, label: 'Bảng điều khiển' },
-    { key: '/van-ban-den', icon: <FileTextOutlined />, label: 'Quản lý Văn bản đến' },
-    { key: '/van-ban-di', icon: <SendOutlined />, label: 'Quản lý Văn bản đi' },
-    { key: '/ho-so', icon: <FolderOpenOutlined />, label: 'Quản lý Hồ sơ' },
-    { key: '/can-bo', icon: <UserOutlined />, label: 'Quản lý Cán bộ' },
-    { key: '/co-quan', icon: <BankOutlined />, label: 'Quản lý Cơ quan' }
-];
-
 const AdminLayout = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const [collapsed, setCollapsed] = useState(false);
 
+    const userRoles = JSON.parse(localStorage.getItem('user_roles') || '[]') || [];
+    const isAdmin = userRoles.includes('ADMIN');
+
+    const menuItems = [
+        { key: '/dashboard', icon: <DashboardOutlined />, label: 'Bảng điều khiển' },
+        { key: '/van-ban-den', icon: <FileTextOutlined />, label: 'Quản lý Văn bản đến' },
+        { key: '/van-ban-di', icon: <SendOutlined />, label: 'Quản lý Văn bản đi' },
+        { key: '/ho-so', icon: <FolderOpenOutlined />, label: 'Quản lý Hồ sơ' },
+        { key: '/can-bo', icon: <UserOutlined />, label: 'Quản lý Cán bộ' },
+        { key: '/co-quan', icon: <BankOutlined />, label: 'Quản lý Cơ quan' },
+
+
+        isAdmin ? {
+            key: '/tai-khoan',
+            icon: <UserOutlined />,
+            label: 'Quản lý Tài khoản',
+        } : null
+
+    ].filter(Boolean);
+
     const handleLogout = () => {
         localStorage.removeItem('access_token');
+        localStorage.removeItem('user_roles');
+
         message.success('Đăng xuất thành công');
         navigate('/login');
     };
