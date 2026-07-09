@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Tag, Tabs, Table, Button, Space, Modal, Form, Input, DatePicker, InputNumber, Select, message, Popconfirm, Tooltip } from 'antd';
 import axios from 'axios';
 import dayjs from 'dayjs';
-import { EyeOutlined, FileDoneOutlined, EditOutlined, LockOutlined, DeleteOutlined } from '@ant-design/icons';
+import { EyeOutlined, FileDoneOutlined, EditOutlined, LockOutlined, DeleteOutlined, PaperClipOutlined } from '@ant-design/icons';
 const API_URL = 'http://localhost:8000/api/ho-so/';
 const BASE_URL = 'http://localhost:8000';
 
@@ -334,6 +334,28 @@ const ListHoSo = () => {
             )
         },
         {
+            title: 'Tệp đính kèm',
+            dataIndex: 'tep_dinh_kems',
+            key: 'tep_dinh_kems',
+            width: 220,
+            render: (tep_dinh_kems) => {
+                const files = tep_dinh_kems || [];
+                if (!files.length) return 'Không có file';
+                return (
+                    <Space direction="vertical" size="mini">
+                        {files.map((file) => (
+                            <Tooltip title={file.ten_file} key={file.id || file.ten_file} placement="topLeft">
+                                <a href={`${BASE_URL}/${file.duong_dan.replaceAll('\\', '/').replace(/^\//, '')}`} target="_blank" rel="noreferrer">
+                                    <PaperClipOutlined style={{ marginRight: 6 }} />
+                                    {file.ten_file}
+                                </a>
+                            </Tooltip>
+                        ))}
+                    </Space>
+                );
+            }
+        },
+        {
             title: 'Ngày đến',
             dataIndex: 'ngay_den',
             key: 'ngay_den',
@@ -362,6 +384,28 @@ const ListHoSo = () => {
                     <span style={{ cursor: 'pointer' }}>{text}</span>
                 </Tooltip>
             )
+        },
+        {
+            title: 'Tệp đính kèm',
+            dataIndex: 'tep_dinh_kems',
+            key: 'tep_dinh_kems',
+            width: 220,
+            render: (tep_dinh_kems) => {
+                const files = tep_dinh_kems || [];
+                if (!files.length) return 'Không có file';
+                return (
+                    <Space direction="vertical" size="mini">
+                        {files.map((file) => (
+                            <Tooltip title={file.ten_file} key={file.id || file.ten_file} placement="topLeft">
+                                <a href={`${BASE_URL}/${file.duong_dan.replaceAll('\\', '/').replace(/^\//, '')}`} target="_blank" rel="noreferrer">
+                                    <PaperClipOutlined style={{ marginRight: 6 }} />
+                                    {file.ten_file}
+                                </a>
+                            </Tooltip>
+                        ))}
+                    </Space>
+                );
+            }
         },
         {
             title: 'Ngày ban hành',

@@ -271,42 +271,27 @@ const ListVanBanDi = () => {
         { title: 'Mã hồ sơ', dataIndex: 'ma_ho_so', key: 'ma_ho_so', width: 180, render: (value) => value ? <Tag color="blue">{value}</Tag> : <Tag color="default">--</Tag> },
         {
             title: 'Tệp đính kèm',
+            dataIndex: 'tep_dinh_kems',
             key: 'tep_dinh_kems',
-            width: 250, // Độ rộng cố định cho cột
-            render: (_, record) => {
-                const files = record.tep_dinh_kems || [];
-                if (!files.length) return <span style={{ color: '#bfbfbf' }}>Không có file</span>;
+            width: 250,
+            render: (tep_dinh_kems) => {
+                const files = tep_dinh_kems || [];
+                if (!files.length) return 'Không có file';
 
                 return (
-                    // Đổi Space thành div flex column để mỗi file nằm 1 dòng cho gọn
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        {files.map((file, i) => {
-                            // Xử lý đường dẫn file (Nếu đang ở file Văn bản đi thì dùng logic URL của bạn)
-                            const normalizedPath = file.duong_dan.replaceAll('\\', '/');
-                            const fileUrl = normalizedPath.startsWith('/') ? `${BASE_URL}${normalizedPath}` : `${BASE_URL}/${normalizedPath}`;
-
+                    <Space direction="vertical" size="mini">
+                        {files.map((file) => {
+                            const fileUrl = `${BASE_URL}/${file.duong_dan.replaceAll('\\', '/').replace(/^\//, '')}`;
                             return (
-                                /* Bọc bằng Tooltip để khi di chuột vào hiện full tên */
-                                <Tooltip title={file.ten_file} key={file.id || i} placement="topLeft">
-                                    <a
-                                        href={fileUrl}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        style={{
-                                            display: 'block',
-                                            maxWidth: '220px',      // Giới hạn chiều dài tối đa
-                                            whiteSpace: 'nowrap',   // Ép không cho rớt dòng
-                                            overflow: 'hidden',     // Phần thừa ra sẽ bị giấu đi
-                                            textOverflow: 'ellipsis'// Thêm dấu 3 chấm (...) ở cuối
-                                        }}
-                                    >
-                                        <PaperClipOutlined style={{ marginRight: '4px' }} />
+                                <Tooltip title={file.ten_file} key={file.id || file.ten_file} placement="topLeft">
+                                    <a href={fileUrl} target="_blank" rel="noreferrer">
+                                        <PaperClipOutlined style={{ marginRight: 6 }} />
                                         {file.ten_file}
                                     </a>
                                 </Tooltip>
                             );
                         })}
-                    </div>
+                    </Space>
                 );
             }
         },

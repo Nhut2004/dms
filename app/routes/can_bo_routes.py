@@ -5,7 +5,7 @@ from typing import List
 from config.database import get_db
 from app.models.auth import CanBo
 from app.schemas.can_bo_schema import CanBoCreate, CanBoResponse, CanBoUpdate
-from app.dependencies import lay_nguoi_dung_hien_tai
+from app.dependencies import lay_nguoi_dung_hien_tai, require_roles
 from app.models.auth import TaiKhoan
 
 router = APIRouter(
@@ -26,7 +26,7 @@ def lay_danh_sach_can_bo(
 def tao_can_bo(
     payload: CanBoCreate,
     db: Session = Depends(get_db),
-    nguoi_dung: TaiKhoan = Depends(lay_nguoi_dung_hien_tai)
+    nguoi_dung: TaiKhoan = Depends(require_roles(["ADMIN", "VAN_THU"]))
 ):
     can_bo = CanBo(**payload.model_dump())
     db.add(can_bo)
@@ -40,7 +40,7 @@ def cap_nhat_can_bo(
     id: int,
     payload: CanBoUpdate,
     db: Session = Depends(get_db),
-    nguoi_dung: TaiKhoan = Depends(lay_nguoi_dung_hien_tai)
+    nguoi_dung: TaiKhoan = Depends(require_roles(["ADMIN", "VAN_THU"]))
 ):
     can_bo = db.query(CanBo).filter(CanBo.id == id).first()
     if not can_bo:
@@ -58,7 +58,7 @@ def cap_nhat_can_bo(
 def xoa_can_bo(
     id: int,
     db: Session = Depends(get_db),
-    nguoi_dung: TaiKhoan = Depends(lay_nguoi_dung_hien_tai)
+    nguoi_dung: TaiKhoan = Depends(require_roles(["ADMIN", "VAN_THU"]))
 ):
     can_bo = db.query(CanBo).filter(CanBo.id == id).first()
     if not can_bo:

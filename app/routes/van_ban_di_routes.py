@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Annotated, List, Optional
 from sqlalchemy import func
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from config.database import get_db
 from app.models.core import HoSo
 from app.models.document import FileDinhKem, VanBanDi, VanBanDen
@@ -32,7 +32,8 @@ def validate_transition(current_status: str, next_status: str):
 
 
 def get_van_ban_di(db: Session, id: int) -> VanBanDi:
-    van_ban = db.query(VanBanDi).filter(VanBanDi.id == id).first()
+    van_ban = db.query(VanBanDi).options(joinedload(
+        VanBanDi.tep_dinh_kems)).filter(VanBanDi.id == id).first()
     if not van_ban:
         raise HTTPException(
             status_code=404, detail="Không tìm thấy văn bản đi")
@@ -164,7 +165,7 @@ def submit_van_ban_di(
     db: Session = Depends(get_db),
     nguoi_dung: TaiKhoan = Depends(lay_nguoi_dung_hien_tai)
 ):
-    van_ban = get_van_ban_di(db, id)
+    van_ban = get_van_ban_di(db, id)  # Eager-load tep_dinh_kems relationship
     if van_ban.trang_thai != 'DRAFT':
         raise HTTPException(
             status_code=400,
@@ -524,7 +525,7 @@ def lay_danh_sach_van_ban_di(
     db: Session = Depends(get_db),
     nguoi_dung: TaiKhoan = Depends(lay_nguoi_dung_hien_tai)
 ):
-    query = db.query(VanBanDi)
+    query = db.query(VanBanDi).options(joinedload(VanBanDi.tep_dinh_kems))
 
     # Lọc theo từ khóa nếu có và không phải chuỗi trắng
     if keyword and keyword.strip():

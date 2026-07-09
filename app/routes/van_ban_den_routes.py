@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from config.database import get_db
 from sqlalchemy import func, or_
 from app.models.document import VanBanDen
@@ -74,7 +74,7 @@ def lay_danh_sach_van_ban_den(
     db: Session = Depends(get_db),
     nguoi_dung: TaiKhoan = Depends(lay_nguoi_dung_hien_tai)
 ):
-    query = db.query(VanBanDen)
+    query = db.query(VanBanDen).options(joinedload(VanBanDen.tep_dinh_kems))
 
     # Nếu có từ khóa, lọc dữ liệu
     if keyword:
@@ -95,7 +95,8 @@ def cap_nhat_van_ban_den(
     db: Session = Depends(get_db),
     nguoi_dung: TaiKhoan = Depends(lay_nguoi_dung_hien_tai)
 ):
-    db_van_ban = db.query(VanBanDen).filter(VanBanDen.id == van_ban_id).first()
+    db_van_ban = db.query(VanBanDen).options(joinedload(
+        VanBanDen.tep_dinh_kems)).filter(VanBanDen.id == van_ban_id).first()
     if not db_van_ban:
         raise HTTPException(
             status_code=404, detail="Không tìm thấy văn bản đến này!")
