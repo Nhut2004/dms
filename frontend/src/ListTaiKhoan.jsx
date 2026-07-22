@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Table, Button, Input, Space, Tag, Tooltip, Popconfirm, Modal, Form, Select, message } from 'antd';
+import { Table, Button, Input, Space, Tag, Tooltip, Popconfirm, Modal, Form, Select, message, Row, Col } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, UserOutlined, LockOutlined } from '@ant-design/icons';
 import axios from 'axios';
 
-// Đã thêm BASE_URL để gọi đúng cổng Backend
 const BASE_URL = 'http://localhost:8000';
+const { Search } = Input;
 
 const ListTaiKhoan = () => {
     const [data, setData] = useState([]);
@@ -14,18 +14,16 @@ const ListTaiKhoan = () => {
     const [modalVisible, setModalVisible] = useState(false);
     const [editingId, setEditingId] = useState(null);
     const [form] = Form.useForm();
+    const [searchText, setSearchText] = useState('');
 
-    // Lấy quyền từ localStorage để ẩn/hiện nút hành động chuẩn xác
     const userRoles = JSON.parse(localStorage.getItem('user_roles') || '[]');
     const canEditMasterData = userRoles.includes('ADMIN');
 
-    // Cấu hình Header cho Axios
     const getAuthHeaders = () => {
         const token = localStorage.getItem('access_token');
         return { Authorization: `Bearer ${token}` };
     };
 
-    // Gọi 3 API khi load trang
     const fetchData = async () => {
         setLoading(true);
         try {
@@ -47,7 +45,6 @@ const ListTaiKhoan = () => {
 
     useEffect(() => { fetchData(); }, []);
 
-    // Xử lý Mở Modal Thêm/Sửa
     const handleOpenModal = (record = null) => {
         setEditingId(record ? record.id : null);
         form.resetFields();
@@ -56,25 +53,21 @@ const ListTaiKhoan = () => {
                 ten_dang_nhap: record.ten_dang_nhap,
                 can_bo_id: record.can_bo_id,
                 vai_tro_ids: record.vai_tros?.map(v => v.id) || [],
-                mat_khau: undefined // Không load mật khẩu cũ
             });
         }
         setModalVisible(true);
     };
 
-    // Xử lý Submit Form
     const handleSubmit = async () => {
         try {
             const values = await form.validateFields();
             const headers = getAuthHeaders();
 
             if (editingId) {
-                // Tính năng PUT (Sửa) - Sẽ báo lỗi 405 vì Backend chưa viết hàm PUT, nhưng cứ để sẵn form
                 if (!values.mat_khau) delete values.mat_khau;
                 await axios.put(`${BASE_URL}/api/tai-khoan/${editingId}`, values, { headers });
                 message.success('Cập nhật thành công!');
             } else {
-                // Tính năng POST (Thêm mới)
                 await axios.post(`${BASE_URL}/api/tai-khoan/`, values, { headers });
                 message.success('Tạo tài khoản thành công!');
             }
@@ -82,21 +75,19 @@ const ListTaiKhoan = () => {
             fetchData();
         } catch (info) {
             if (info.errorFields) message.error('Vui lòng điền đầy đủ thông tin bắt buộc!');
-            else if (info.response && info.response.data.detail) {
-                message.error(info.response.data.detail); // Hiển thị lỗi trùng tên đăng nhập từ Backend
+            else if (info.response?.data?.detail) {
+                message.error(info.response.data.detail);
             }
         }
     };
 
-    // Xử lý Xóa
     const handleDelete = async (id) => {
         try {
             await axios.delete(`${BASE_URL}/api/tai-khoan/${id}`, { headers: getAuthHeaders() });
             message.success('Xóa thành công!');
             fetchData();
         } catch (error) {
-            // Hiển thị lỗi từ Backend (ví dụ: lỗi không được tự xóa mình)
-            if (error.response && error.response.data.detail) {
+            if (error.response?.data?.detail) {
                 message.error(error.response.data.detail);
             } else {
                 message.error('Lỗi khi xóa tài khoản!');
@@ -104,61 +95,199 @@ const ListTaiKhoan = () => {
         }
     };
 
-    // Cấu hình Cột Bảng
+    const filteredData = data.filter(item => {
+        if (!searchText) return true;
+        return item.ten_dang_nhap.toLowerCase().includes(searchText.toLowerCase());
+    });
+
     const columns = [
-        { title: 'ID', dataIndex: 'id', key: 'id', width: 60 },
-        { title: 'Tên đăng nhập', dataIndex: 'ten_dang_nhap', key: 'ten_dang_nhap' },
-        { title: 'Trạng thái', dataIndex: 'trang_thai', key: 'trang_thai', render: v => <Tag color={v === 'ACTIVE' ? 'green' : 'red'}>{v}</Tag> },
         {
-            title: 'Vai trò', dataIndex: 'vai_tros', key: 'vai_tros',
-            render: (vai_tros) => vai_tros?.map(v => <Tag color="blue" key={v.id}>{v.ten_vai_tro}</Tag>)
+            title: 'STT',
+            key: 'stt',
+            width: 50,
+            align: 'center',
+            render: (_, __, index) => index + 1
         },
         {
-            title: 'Hành động', key: 'action', width: 120, align: 'center',
-            render: (_, record) => canEditMasterData ? (
-                <Space size="small">
-                    <Tooltip title="Sửa"><Button type="link" icon={<EditOutlined />} onClick={() => handleOpenModal(record)} /></Tooltip>
-                    <Popconfirm title="Xóa tài khoản này?" onConfirm={() => handleDelete(record.id)}>
-                        <Tooltip title="Xóa"><Button type="link" danger icon={<DeleteOutlined />} /></Tooltip>
-                    </Popconfirm>
-                </Space>
-            ) : null
+            title: 'Tên đăng nhập',
+            dataIndex: 'ten_dang_nhap',
+            key: 'ten_dang_nhap',
+            width: 180,
+            render: (text) => (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <UserOutlined style={{ fontSize: 16, color: '#1677ff' }} />
+                    <strong>{text}</strong>
+                </div>
+            )
+        },
+        {
+            title: 'Cán bộ gán với',
+            dataIndex: 'can_bo_id',
+            key: 'can_bo_id',
+            width: 220,
+            render: (id) => {
+                const canBo = canBos.find(cb => cb.id === id);
+                return (
+                    <Tooltip title={canBo ? `${canBo.ho_ten} (${canBo.chuc_vu || 'N/A'})` : '---'}>
+                        <span>{canBo?.ho_ten || '---'}</span>
+                    </Tooltip>
+                );
+            }
+        },
+        {
+            title: 'Vai trò',
+            dataIndex: 'vai_tros',
+            key: 'vai_tros',
+            width: 220,
+            render: (vt_list) => {
+                if (!vt_list || vt_list.length === 0) return <Tag>Không có vai trò</Tag>;
+                return (
+                    <Space size="small" wrap>
+                        {vt_list.map((vt) => {
+                            let color = 'default';
+                            if (vt.ten_vai_tro === 'ADMIN') color = 'red';
+                            else if (vt.ten_vai_tro === 'MANAGER') color = 'orange';
+                            else if (vt.ten_vai_tro === 'USER') color = 'blue';
+                            return <Tag key={vt.id} color={color}>{vt.ten_vai_tro}</Tag>;
+                        })}
+                    </Space>
+                );
+            }
+        },
+        {
+            title: 'Hành động',
+            key: 'action',
+            align: 'center',
+            width: 130,
+            render: (_, record) => (
+                canEditMasterData ? (
+                    <Space size="small" style={{ whiteSpace: 'nowrap' }}>
+                        <Tooltip title="Chỉnh sửa">
+                            <Button
+                                type="primary"
+                                icon={<EditOutlined />}
+                                size="small"
+                                onClick={() => handleOpenModal(record)}
+                            />
+                        </Tooltip>
+                        <Tooltip title="Xóa">
+                            <Popconfirm 
+                                title="Xóa tài khoản" 
+                                description="Bạn có chắc muốn xóa tài khoản này?"
+                                onConfirm={() => handleDelete(record.id)}
+                                okText="Đồng ý"
+                                cancelText="Hủy"
+                            >
+                                <Button type="primary" danger icon={<DeleteOutlined />} size="small" />
+                            </Popconfirm>
+                        </Tooltip>
+                    </Space>
+                ) : (
+                    <span style={{ color: '#999' }}>Không có quyền</span>
+                )
+            )
         }
     ];
 
     return (
-        <Card>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
-                <Input.Search placeholder="Tìm kiếm tài khoản..." style={{ width: 300 }} allowClear />
+        <div style={{ padding: '24px', background: '#fff', borderRadius: '8px' }}>
+            <Row gutter={[16, 16]} style={{ marginBottom: '24px' }}>
+                <Col flex="auto">
+                    <Search
+                        placeholder="🔍 Tìm kiếm theo tên đăng nhập..."
+                        allowClear
+                        onChange={(e) => setSearchText(e.target.value)}
+                        style={{ width: '100%' }}
+                        size="large"
+                    />
+                </Col>
                 {canEditMasterData && (
-                    <Button type="primary" icon={<PlusOutlined />} onClick={() => handleOpenModal()}>Thêm mới</Button>
+                    <Col>
+                        <Button type="primary" icon={<PlusOutlined />} onClick={() => handleOpenModal()} size="large">
+                            Thêm mới
+                        </Button>
+                    </Col>
                 )}
-            </div>
+            </Row>
 
-            <Table rowKey="id" columns={columns} dataSource={data} loading={loading} scroll={{ x: 700 }} pagination={{ pageSize: 10 }} />
+            <Table
+                rowKey="id"
+                columns={columns}
+                dataSource={filteredData}
+                loading={loading}
+                size="middle"
+                bordered
+                pagination={{ pageSize: 10 }}
+                scroll={{ x: 'max-content' }}
+            />
 
-            <Modal title={editingId ? "Sửa Tài khoản" : "Thêm Tài khoản"} open={modalVisible} onOk={handleSubmit} onCancel={() => setModalVisible(false)}>
-                <Form form={form} layout="vertical">
-                    <Form.Item name="ten_dang_nhap" label="Tên đăng nhập" rules={[{ required: true, message: 'Bắt buộc nhập!' }]}>
-                        <Input prefix={<UserOutlined />} />
+            <Modal
+                title={editingId ? 'Cập nhật tài khoản' : 'Tạo tài khoản mới'}
+                open={modalVisible}
+                onOk={handleSubmit}
+                onCancel={() => {
+                    setModalVisible(false);
+                    form.resetFields();
+                }}
+                okText="Lưu"
+                cancelText="Hủy"
+                width={600}
+            >
+                <Form layout="vertical" form={form}>
+                    <Form.Item
+                        label="Tên đăng nhập"
+                        name="ten_dang_nhap"
+                        rules={[{ required: true, message: 'Vui lòng nhập tên đăng nhập!' }]}
+                    >
+                        <Input placeholder="Ví dụ: admin@example.com" disabled={!!editingId} />
                     </Form.Item>
-                    <Form.Item name="mat_khau" label="Mật khẩu" rules={editingId ? [] : [{ required: true, message: 'Bắt buộc nhập mật khẩu!' }]}>
-                        <Input.Password prefix={<LockOutlined />} placeholder={editingId ? "Để trống nếu không đổi" : ""} />
+
+                    {!editingId && (
+                        <Form.Item
+                            label="Mật khẩu"
+                            name="mat_khau"
+                            rules={[{ required: true, message: 'Vui lòng nhập mật khẩu!' }]}
+                        >
+                            <Input.Password placeholder="Nhập mật khẩu" prefix={<LockOutlined />} />
+                        </Form.Item>
+                    )}
+
+                    <Form.Item
+                        label="Cán bộ"
+                        name="can_bo_id"
+                        rules={[{ required: true, message: 'Vui lòng chọn cán bộ!' }]}
+                    >
+                        <Select
+                            placeholder="Chọn cán bộ"
+                            showSearch
+                            optionLabelProp="label"
+                            options={canBos.map(cb => ({
+                                value: cb.id,
+                                label: `${cb.ho_ten} (${cb.chuc_vu || 'N/A'})`
+                            }))}
+                            filterOption={(input, option) =>
+                                (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                            }
+                        />
                     </Form.Item>
-                    <Form.Item name="can_bo_id" label="Cán bộ sở hữu">
-                        <Select showSearch optionFilterProp="children" placeholder="Chọn cán bộ" allowClear>
-                            {canBos.map(cb => <Select.Option key={cb.id} value={cb.id}>{cb.ho_ten || `Cán bộ ID: ${cb.id}`}</Select.Option>)}
-                        </Select>
-                    </Form.Item>
-                    <Form.Item name="vai_tro_ids" label="Vai trò" rules={[{ required: true, message: 'Chọn ít nhất 1 vai trò!' }]}>
-                        <Select mode="multiple" placeholder="Chọn vai trò">
-                            {vaiTros.map(vt => <Select.Option key={vt.id} value={vt.id}>{vt.ten_vai_tro}</Select.Option>)}
-                        </Select>
+
+                    <Form.Item
+                        label="Vai trò"
+                        name="vai_tro_ids"
+                        rules={[{ required: true, message: 'Vui lòng chọn ít nhất một vai trò!' }]}
+                    >
+                        <Select
+                            mode="multiple"
+                            placeholder="Chọn vai trò"
+                            options={vaiTros.map(vt => ({
+                                value: vt.id,
+                                label: vt.ten_vai_tro
+                            }))}
+                        />
                     </Form.Item>
                 </Form>
             </Modal>
-        </Card>
+        </div>
     );
 };
-
 export default ListTaiKhoan;

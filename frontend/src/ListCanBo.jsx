@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { Table, Button, Space, Input, Modal, Form, Select, message, Popconfirm, Tooltip, Tag, Card } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { Table, Button, Space, Input, Modal, Form, Select, message, Popconfirm, Tooltip, Tag, Card, Row, Col } from 'antd';
+import { PlusOutlined, EditOutlined, DeleteOutlined, UserOutlined, PhoneOutlined, MailOutlined } from '@ant-design/icons';
 import axios from 'axios';
 
 const BASE_URL = 'http://localhost:8000';
 const API_URL = `${BASE_URL}/api/can-bo/`;
+const { Search } = Input;
 
 const getAuthHeaders = () => {
     const token = localStorage.getItem('access_token');
@@ -112,62 +113,78 @@ const ListCanBo = () => {
         }
     };
 
-    const filteredData = data.filter((item) => {
-        if (!searchText) return true;
-        const keyword = searchText.toLowerCase();
-        return (item.ho_ten || '').toLowerCase().includes(keyword);
-    });
-
     const columns = [
-        { title: 'ID', dataIndex: 'id', key: 'id', width: 70, align: 'center' },
+        {
+            title: 'STT',
+            key: 'stt',
+            width: 50,
+            align: 'center',
+            render: (_, __, index) => (pagination.current - 1) * pagination.pageSize + index + 1
+        },
         {
             title: 'Họ và tên',
             dataIndex: 'ho_ten',
             key: 'ho_ten',
-            render: (text) => <strong style={{ color: '#1677ff' }}>{text}</strong>
+            width: 160,
+            render: (text) => (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <UserOutlined style={{ fontSize: 16, color: '#1677ff' }} />
+                    <strong>{text}</strong>
+                </div>
+            )
         },
         {
             title: 'Chức vụ',
             dataIndex: 'chuc_vu',
             key: 'chuc_vu',
-            width: 220,
+            width: 200,
             render: (text) => {
-                if (!text) return <span style={{ color: '#8c8c8c' }}>--- </span>;
+                if (!text) return <span style={{ color: '#8c8c8c' }}>Chưa cập nhật</span>;
                 let color = 'default';
                 if (text.toLowerCase().includes('giám đốc') || text.toLowerCase().includes('lãnh đạo')) color = 'red';
-                else if (text.toLowerCase().includes('chánh văn phòng')) color = 'purple';
+                else if (text.toLowerCase().includes('chánh')) color = 'purple';
                 else if (text.toLowerCase().includes('chuyên viên')) color = 'blue';
                 return <Tag color={color}>{text}</Tag>;
             }
         },
         {
-            title: 'Đơn vị/Cơ quan',
+            title: 'Đơn vị',
             dataIndex: 'co_quan_id',
             key: 'co_quan_id',
-            width: 260,
+            width: 250,
             render: (id) => {
                 const coQuan = coQuanOptions.find(item => item.value === id);
-                return <span>{coQuan?.label || '---'}</span>;
+                return (
+                    <Tooltip title={coQuan?.label || '---'}>
+                        <span>{coQuan?.label || '---'}</span>
+                    </Tooltip>
+                );
             }
         },
         {
             title: 'Hành động',
             key: 'action',
             align: 'center',
-            width: 140,
+            width: 130,
             render: (_, record) => (
                 <Space size="small" style={{ whiteSpace: 'nowrap' }}>
                     <Tooltip title="Chỉnh sửa">
                         <Button
                             type="primary"
                             icon={<EditOutlined />}
-                            style={{ backgroundColor: '#52c41a', borderColor: '#52c41a' }}
+                            size="small"
                             onClick={() => handleEdit(record)}
                         />
                     </Tooltip>
                     <Tooltip title="Xóa">
-                        <Popconfirm title="Bạn có chắc muốn xóa cán bộ này?" onConfirm={() => handleDelete(record.id)}>
-                            <Button type="primary" danger icon={<DeleteOutlined />} />
+                        <Popconfirm 
+                            title="Xóa cán bộ" 
+                            description="Bạn có chắc muốn xóa cán bộ này?" 
+                            onConfirm={() => handleDelete(record.id)}
+                            okText="Đồng ý"
+                            cancelText="Hủy"
+                        >
+                            <Button type="primary" danger icon={<DeleteOutlined />} size="small" />
                         </Popconfirm>
                     </Tooltip>
                 </Space>
@@ -176,32 +193,38 @@ const ListCanBo = () => {
     ];
 
     return (
-        <Card
-            title="Quản lý Cán bộ"
-            extra={
-                <Space>
-                    <Input.Search
-                        placeholder="Tìm theo tên cán bộ"
+        <div style={{ padding: '24px', background: '#fff', borderRadius: '8px' }}>
+            <Row gutter={[16, 16]} style={{ marginBottom: '24px' }}>
+                <Col flex="auto">
+                    <Search
+                        placeholder="🔍 Tìm kiếm theo tên cán bộ..."
                         allowClear
                         onSearch={handleSearch}
-                        style={{ width: 280 }}
+                        style={{ width: '100%' }}
+                        size="large"
                     />
-                    <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>Thêm mới</Button>
-                </Space>
-            }
-        >
+                </Col>
+                <Col>
+                    <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd} size="large">
+                        Thêm mới
+                    </Button>
+                </Col>
+            </Row>
+
             <Table
                 rowKey="id"
                 columns={columns}
-                dataSource={filteredData}
+                dataSource={data}
                 loading={loading}
                 pagination={pagination}
                 onChange={handleTableChange}
                 scroll={{ x: 'max-content' }}
+                size="middle"
+                bordered
             />
 
             <Modal
-                title={editingRecord ? 'Cập nhật cán bộ' : 'Thêm mới cán bộ'}
+                title={editingRecord ? 'Cập nhật thông tin cán bộ' : 'Thêm mới cán bộ'}
                 open={isModalVisible}
                 onOk={() => form.submit()}
                 onCancel={() => {
@@ -210,30 +233,48 @@ const ListCanBo = () => {
                 }}
                 okText="Lưu"
                 cancelText="Hủy"
+                width={600}
             >
                 <Form layout="vertical" form={form} onFinish={handleSubmit}>
-                    <Form.Item label="Họ và tên" name="ho_ten" rules={[{ required: true, message: 'Vui lòng nhập họ và tên' }]}>
-                        <Input />
+                    <Form.Item 
+                        label="Họ và tên" 
+                        name="ho_ten" 
+                        rules={[{ required: true, message: 'Vui lòng nhập họ và tên' }]}
+                    >
+                        <Input placeholder="Ví dụ: Nguyễn Văn A" />
                     </Form.Item>
                     <Form.Item label="Chức vụ" name="chuc_vu">
                         <Select
                             placeholder="Chọn hoặc nhập chức vụ"
                             allowClear
+                            showSearch
                             options={[
                                 { label: 'Lãnh đạo', value: 'Lãnh đạo' },
                                 { label: 'Giám đốc', value: 'Giám đốc' },
                                 { label: 'Chánh văn phòng', value: 'Chánh văn phòng' },
-                                { label: 'Chuyên viên', value: 'Chuyên viên' },
-                                { label: 'Phó phòng', value: 'Phó phòng' }
+                                { label: 'Trưởng phòng', value: 'Trưởng phòng' },
+                                { label: 'Phó phòng', value: 'Phó phòng' },
+                                { label: 'Chuyên viên', value: 'Chuyên viên' }
                             ]}
                         />
                     </Form.Item>
-                    <Form.Item label="Đơn vị/Cơ quan" name="co_quan_id" rules={[{ required: true, message: 'Vui lòng chọn cơ quan' }]}>
-                        <Select options={coQuanOptions} placeholder="Chọn cơ quan" />
+                    <Form.Item 
+                        label="Đơn vị/Cơ quan" 
+                        name="co_quan_id" 
+                        rules={[{ required: true, message: 'Vui lòng chọn cơ quan' }]}
+                    >
+                        <Select 
+                            options={coQuanOptions} 
+                            placeholder="Chọn cơ quan" 
+                            showSearch
+                            filterOption={(input, option) =>
+                                (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                            }
+                        />
                     </Form.Item>
                 </Form>
             </Modal>
-        </Card>
+        </div>
     );
 };
 
