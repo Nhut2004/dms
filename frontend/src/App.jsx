@@ -11,6 +11,7 @@ import ListCanBo from './ListCanBo';
 import ListCoQuan from './ListCoQuan';
 import Dashboard from './Dashboard';
 import ListTaiKhoan from './ListTaiKhoan';
+import CreateQuyetDinh from './CreateQuyetDinh';
 const ProtectedRoute = ({ children }) => {
   const token = localStorage.getItem('access_token');
   if (!token || token === 'null' || token === 'undefined' || token.trim() === '') {
@@ -46,6 +47,7 @@ const App = () => {
           <Route path="tai-khoan" element={<ListTaiKhoan />} />
           {/* Luồng Văn bản đến */}
           <Route path="van-ban-den" element={<ListVanBanDen />} />
+          <Route path="them-quyet-dinh" element={<CreateQuyetDinh />} />
         </Route>
       </Routes>
     </BrowserRouter>

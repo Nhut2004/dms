@@ -106,6 +106,14 @@ class DanhMucLoaiQuyetDinh(Base):
     mo_ta = Column(Text)
 
 
+class DanhMucVaiTroQuyetDinh(Base):
+    __tablename__ = "danh_muc_vai_tro_quyet_dinh"
+    id = Column(Integer, primary_key=True, index=True)
+    ma_vai_tro = Column(String(50), unique=True, nullable=False)
+    ten_vai_tro = Column(String(150), nullable=False)
+    mo_ta = Column(Text)
+
+
 class QuyetDinh(Base):
     __tablename__ = "quyet_dinh"
     id = Column(Integer, primary_key=True, index=True)
@@ -125,6 +133,33 @@ class QuyetDinh(Base):
     ngay_tao = Column(DateTime, default=datetime.utcnow, nullable=False)
     ngay_cap_nhat = Column(DateTime, default=datetime.utcnow,
                            onupdate=datetime.utcnow, nullable=False)
+    # Relationship to pull participant snapshots when returning a decision
+    thanh_phan = relationship("ThanhPhanQuyetDinh", backref="quyet_dinh", order_by="ThanhPhanQuyetDinh.thu_tu", lazy='select')
+
+
+class ThanhPhanQuyetDinh(Base):
+    __tablename__ = "thanh_phan_quyet_dinh"
+    id = Column(Integer, primary_key=True, index=True)
+    quyet_dinh_id = Column(Integer, ForeignKey(
+        "quyet_dinh.id", ondelete="CASCADE"), nullable=False)
+
+    # Có thể chọn cán bộ đã có trong hệ thống
+    can_bo_id = Column(Integer, ForeignKey(
+        "can_bo.id", ondelete="SET NULL"))
+
+    # Snapshot fields stored on the decision (to keep historical record)
+    ho_ten = Column(String(100), nullable=False)
+    don_vi_id = Column(Integer, ForeignKey(
+        "co_quan_to_chuc.id", ondelete="SET NULL"))
+    ten_don_vi = Column(String(255))
+    chuc_vu = Column(String(100))
+
+    # Vai trò trong quyết định (tham chiếu tới bảng danh_muc_vai_tro_quyet_dinh)
+    vai_tro_quyet_dinh_id = Column(Integer, ForeignKey(
+        "danh_muc_vai_tro_quyet_dinh.id", ondelete="RESTRICT"), nullable=False)
+    noi_dung_lien_quan = Column(Text)
+    thu_tu = Column(Integer, default=1, nullable=False)
+    ghi_chu = Column(Text)
 
 
 class LichSuQuyetDinh(Base):

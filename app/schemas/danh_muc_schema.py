@@ -14,3 +14,13 @@ class DanhMucResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class DanhMucVaiTroQuyetDinhResponse(BaseModel):
+    id: int
+    ma_vai_tro: str
+    ten_vai_tro: str
+    mo_ta: Optional[str]
+
+    class Config:
+        from_attributes = True
