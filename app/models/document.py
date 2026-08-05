@@ -98,6 +98,37 @@ class FileDinhKem(Base):
     ngay_tao = Column(DateTime, default=datetime.utcnow, nullable=False)
 
 
+class OCRJob(Base):
+    __tablename__ = "ocr_job"
+    id = Column(Integer, primary_key=True, index=True)
+    file_name = Column(String(255), nullable=False)
+    file_path = Column(String(500), nullable=False)
+    status = Column(String(30), nullable=False, default="PENDING")
+    loai_van_ban = Column(String(20), nullable=True)
+    van_ban_id = Column(Integer, nullable=True)
+    full_text = Column(Text, nullable=True)
+    error_message = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    processed_at = Column(DateTime, nullable=True)
+    extracted_items = relationship("OCRExtractedItem", back_populates="job", order_by="OCRExtractedItem.order", lazy='select')
+
+
+class OCRExtractedItem(Base):
+    __tablename__ = "ocr_extracted_item"
+    id = Column(Integer, primary_key=True, index=True)
+    ocr_job_id = Column(Integer, ForeignKey("ocr_job.id", ondelete="CASCADE"), nullable=False)
+    label = Column(String(150), nullable=False)
+    text = Column(Text, nullable=False)
+    confidence = Column(Float, nullable=False)
+    x1 = Column(Integer, nullable=False)
+    y1 = Column(Integer, nullable=False)
+    x2 = Column(Integer, nullable=False)
+    y2 = Column(Integer, nullable=False)
+    order = Column(Integer, nullable=False, default=1)
+
+    job = relationship("OCRJob", back_populates="extracted_items")
+
+
 class DanhMucLoaiQuyetDinh(Base):
     __tablename__ = "danh_muc_loai_quyet_dinh"
     id = Column(Integer, primary_key=True, index=True)

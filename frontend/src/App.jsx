@@ -12,6 +12,7 @@ import ListCoQuan from './ListCoQuan';
 import Dashboard from './Dashboard';
 import ListTaiKhoan from './ListTaiKhoan';
 import CreateQuyetDinh from './CreateQuyetDinh';
+import OCRPage from './OCRPage';
 const ProtectedRoute = ({ children }) => {
   const token = localStorage.getItem('access_token');
   if (!token || token === 'null' || token === 'undefined' || token.trim() === '') {
@@ -48,6 +49,7 @@ const App = () => {
           {/* Luồng Văn bản đến */}
           <Route path="van-ban-den" element={<ListVanBanDen />} />
           <Route path="them-quyet-dinh" element={<CreateQuyetDinh />} />
+          <Route path="ocr" element={<OCRPage />} />
         </Route>
       </Routes>
     </BrowserRouter>
