@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { Table, Button, Space, Input, Modal, Form, message, Popconfirm, Tooltip, Card } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { Table, Button, Space, Input, Modal, Form, message, Popconfirm, Tooltip, Row, Col, Tag } from 'antd';
+import { PlusOutlined, EditOutlined, DeleteOutlined, BankOutlined } from '@ant-design/icons';
 import axios from 'axios';
 
 const BASE_URL = 'http://localhost:8000';
 const API_URL = `${BASE_URL}/api/co-quan/`;
+const { Search } = Input;
 
 const getAuthHeaders = () => {
     const token = localStorage.getItem('access_token');
@@ -25,7 +26,7 @@ const ListCoQuan = () => {
         total: 0,
     });
 
-    const fetchData = async (page = 1, size = 10, keyword = searchText) => {
+    const fetchData = async (page = 1, size = 10, keyword = '') => {
         setLoading(true);
         try {
             const response = await axios.get(API_URL, {
@@ -100,34 +101,40 @@ const ListCoQuan = () => {
         }
     };
 
-    const filteredData = data.filter((item) => {
-        if (!searchText) return true;
-        const keyword = searchText.toLowerCase();
-        return (
-            (item.ten_co_quan || '').toLowerCase().includes(keyword) ||
-            (item.organ_id || '').toLowerCase().includes(keyword)
-        );
-    });
-
     const columns = [
         {
-            title: 'Mã định danh (Organ ID)',
-            dataIndex: 'organ_id',
-            key: 'organ_id',
-            width: 180,
-            render: (text) => <strong style={{ color: '#1677ff' }}>{text}</strong>
+            title: 'STT',
+            key: 'stt',
+            width: 50,
+            align: 'center',
+            render: (_, __, index) => (pagination.current - 1) * pagination.pageSize + index + 1
         },
         {
-            title: 'Tên cơ quan / tổ chức',
+            title: 'Mã cơ quan',
+            dataIndex: 'organ_id',
+            key: 'organ_id',
+            width: 140,
+            render: (text) => (
+                <Tag color="blue">{text || 'N/A'}</Tag>
+            )
+        },
+        {
+            title: 'Tên cơ quan / Tổ chức',
             dataIndex: 'ten_co_quan',
             key: 'ten_co_quan',
-            render: (text) => <strong>{text}</strong>
+            width: 260,
+            render: (text) => (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <BankOutlined style={{ fontSize: 16, color: '#1677ff' }} />
+                    <strong>{text}</strong>
+                </div>
+            )
         },
         {
             title: 'Địa chỉ',
             dataIndex: 'dia_chi',
             key: 'dia_chi',
-            width: 320,
+            width: 280,
             ellipsis: true,
             render: (text) => (
                 <Tooltip title={text || '---'} placement="topLeft" color="blue">
@@ -139,20 +146,26 @@ const ListCoQuan = () => {
             title: 'Hành động',
             key: 'action',
             align: 'center',
-            width: 140,
+            width: 130,
             render: (_, record) => (
                 <Space size="small" style={{ whiteSpace: 'nowrap' }}>
                     <Tooltip title="Chỉnh sửa">
                         <Button
                             type="primary"
                             icon={<EditOutlined />}
-                            style={{ backgroundColor: '#52c41a', borderColor: '#52c41a' }}
+                            size="small"
                             onClick={() => handleEdit(record)}
                         />
                     </Tooltip>
                     <Tooltip title="Xóa">
-                        <Popconfirm title="Bạn có chắc muốn xóa cơ quan này?" onConfirm={() => handleDelete(record.id)}>
-                            <Button type="primary" danger icon={<DeleteOutlined />} />
+                        <Popconfirm 
+                            title="Xóa cơ quan" 
+                            description="Bạn có chắc muốn xóa cơ quan này?" 
+                            onConfirm={() => handleDelete(record.id)}
+                            okText="Đồng ý"
+                            cancelText="Hủy"
+                        >
+                            <Button type="primary" danger icon={<DeleteOutlined />} size="small" />
                         </Popconfirm>
                     </Tooltip>
                 </Space>
@@ -161,32 +174,38 @@ const ListCoQuan = () => {
     ];
 
     return (
-        <Card
-            title="Quản lý Cơ quan"
-            extra={
-                <Space>
-                    <Input.Search
-                        placeholder="Tìm theo tên hoặc mã cơ quan"
+        <div style={{ padding: '24px', background: '#fff', borderRadius: '8px' }}>
+            <Row gutter={[16, 16]} style={{ marginBottom: '24px' }}>
+                <Col flex="auto">
+                    <Search
+                        placeholder="🔍 Tìm kiếm theo tên cơ quan..."
                         allowClear
                         onSearch={handleSearch}
-                        style={{ width: 300 }}
+                        style={{ width: '100%' }}
+                        size="large"
                     />
-                    <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>Thêm mới</Button>
-                </Space>
-            }
-        >
+                </Col>
+                <Col>
+                    <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd} size="large">
+                        Thêm mới
+                    </Button>
+                </Col>
+            </Row>
+
             <Table
                 rowKey="id"
                 columns={columns}
-                dataSource={filteredData}
+                dataSource={data}
                 loading={loading}
                 pagination={pagination}
                 onChange={handleTableChange}
                 scroll={{ x: 'max-content' }}
+                size="middle"
+                bordered
             />
 
             <Modal
-                title={editingItem ? 'Cập nhật cơ quan' : 'Thêm mới cơ quan'}
+                title={editingItem ? 'Cập nhật thông tin cơ quan' : 'Thêm mới cơ quan'}
                 open={isModalVisible}
                 onOk={() => form.submit()}
                 onCancel={() => {
@@ -195,20 +214,32 @@ const ListCoQuan = () => {
                 }}
                 okText="Lưu"
                 cancelText="Hủy"
+                width={650}
             >
                 <Form layout="vertical" form={form} onFinish={handleSubmit}>
-                    <Form.Item label="Mã định danh (Organ ID)" name="organ_id" rules={[{ required: true, message: 'Vui lòng nhập mã định danh' }]}>
-                        <Input disabled={!!editingItem} />
+                    <Form.Item 
+                        label="Mã cơ quan" 
+                        name="organ_id"
+                        rules={[{ required: true, message: 'Vui lòng nhập mã cơ quan' }]}
+                    >
+                        <Input placeholder="Ví dụ: ORG001" disabled={!!editingItem} />
                     </Form.Item>
-                    <Form.Item label="Tên cơ quan / tổ chức" name="ten_co_quan" rules={[{ required: true, message: 'Vui lòng nhập tên cơ quan' }]}>
-                        <Input />
+                    <Form.Item 
+                        label="Tên cơ quan / Tổ chức" 
+                        name="ten_co_quan"
+                        rules={[{ required: true, message: 'Vui lòng nhập tên cơ quan' }]}
+                    >
+                        <Input placeholder="Ví dụ: Sở Giáo dục và Đào tạo" />
                     </Form.Item>
                     <Form.Item label="Địa chỉ" name="dia_chi">
-                        <Input.TextArea rows={3} />
+                        <Input.TextArea 
+                            rows={3}
+                            placeholder="Ví dụ: 123 Đường ABC, Phường XYZ, Quận 1, TP HCM"
+                        />
                     </Form.Item>
                 </Form>
             </Modal>
-        </Card>
+        </div>
     );
 };
 
